@@ -5,43 +5,26 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="公司雲端ERP">
-    <link rel="apple-touch-icon" href="https://via.placeholder.com/180?text=ERP">
-    
-    <title>企業全方位雲端管理系統</title>
+    <title>企業終極雲端管理系統</title>
     <style>
-        :root { --primary: #007bff; --success: #28a745; --warning: #ffc107; --danger: #dc3545; --dark: #2c3e50; --light: #f8f9fa; }
-        body { font-family: -apple-system, sans-serif; margin: 0; background: #f0f2f5; padding-bottom: 80px; -webkit-tap-highlight-color: transparent; }
-        
-        /* 登入遮罩 */
-        #loginOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 2000; display: flex; flex-direction: column; justify-content: center; padding: 40px; box-sizing: border-box; }
-        
-        .header { background: var(--dark); color: white; padding: 20px 15px 15px; text-align: center; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        :root { --primary: #007bff; --success: #28a745; --dark: #2c3e50; --bg: #f8f9fa; }
+        body { font-family: -apple-system, sans-serif; margin: 0; background: var(--bg); padding-bottom: 80px; }
+        .header { background: var(--dark); color: white; padding: 20px 15px; text-align: center; position: sticky; top: 0; z-index: 100; }
         .page { display: none; padding: 15px; animation: fadeIn 0.3s; }
         .page.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        
-        .card { background: white; border-radius: 15px; padding: 20px; margin-bottom: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
-        h3 { margin-top: 0; color: var(--dark); border-left: 5px solid var(--primary); padding-left: 10px; margin-bottom: 20px; font-size: 1.1rem; }
-        
-        label { display: block; margin-bottom: 8px; font-weight: bold; font-size: 0.9rem; color: #555; }
-        input, select { width: 100%; padding: 12px; margin-bottom: 18px; border: 1px solid #ddd; border-radius: 10px; box-sizing: border-box; font-size: 1rem; -webkit-appearance: none; }
-        
-        .btn { width: 100%; padding: 16px; border-radius: 10px; border: none; font-weight: bold; color: white; font-size: 1rem; cursor: pointer; transition: 0.2s; }
-        .btn:active { opacity: 0.7; transform: scale(0.98); }
-
-        /* 列表樣式 */
-        .list-item { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid #f1f1f1; }
-        .item-img { width: 50px; height: 50px; border-radius: 8px; object-fit: cover; background: #eee; }
-        .status-tag { font-size: 0.7rem; padding: 3px 8px; border-radius: 5px; font-weight: bold; }
-
-        /* 導覽列 */
-        .nav-bar { position: fixed; bottom: 0; width: 100%; background: white; display: flex; border-top: 1px solid #ddd; height: 70px; box-shadow: 0 -2px 15px rgba(0,0,0,0.05); }
-        .nav-item { flex: 1; text-align: center; display: flex; flex-direction: column; justify-content: center; font-size: 0.75rem; color: #888; text-decoration: none; }
+        .card { background: white; border-radius: 15px; padding: 15px; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        h3 { margin-top: 0; border-left: 5px solid var(--primary); padding-left: 10px; margin-bottom: 15px; font-size: 1.1rem; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 0.85rem; color: #555; }
+        input, select { width: 100%; padding: 12px; margin-bottom: 12px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 1rem; }
+        .btn { width: 100%; padding: 15px; border-radius: 8px; border: none; font-weight: bold; color: white; font-size: 1rem; cursor: pointer; }
+        .btn:active { opacity: 0.6; }
+        .nav-bar { position: fixed; bottom: 0; width: 100%; background: white; display: flex; border-top: 1px solid #ddd; height: 70px; }
+        .nav-item { flex: 1; text-align: center; display: flex; flex-direction: column; justify-content: center; font-size: 0.7rem; color: #888; }
         .nav-item.active { color: var(--primary); font-weight: bold; }
-        .nav-icon { font-size: 1.4rem; margin-bottom: 3px; }
-
         #loading { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.8); display: none; justify-content: center; align-items: center; z-index: 3000; font-weight: bold; color: var(--primary); }
+        #loginOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 2000; display: flex; flex-direction: column; justify-content: center; padding: 40px; box-sizing: border-box; }
+        .list-box { border-top: 1px solid #eee; margin-top: 10px; padding-top: 10px; font-size: 0.9rem; }
     </style>
 </head>
 <body>
@@ -49,43 +32,39 @@
 <div id="loading">⌛ 雲端同步中...</div>
 
 <div id="loginOverlay">
-    <h1 style="text-align:center; color:var(--dark);">🏢 企業系統登入</h1>
-    <p style="text-align:center; color:#888; margin-bottom:30px;">請輸入員工帳號密碼</p>
-    <label>帳號</label>
-    <input type="text" id="acc" placeholder="請輸入帳號">
-    <label>密碼</label>
-    <input type="password" id="pwd" placeholder="請輸入密碼">
-    <button class="btn" style="background:var(--dark)" onclick="checkLogin()">立即登入</button>
+    <h2 style="text-align:center;">🔐 企業系統登入</h2>
+    <input type="text" id="acc" placeholder="帳號">
+    <input type="password" id="pwd" placeholder="密碼">
+    <button class="btn" style="background:var(--dark)" onclick="checkLogin()">登入</button>
 </div>
 
-<div class="header"><strong id="headerTitle">數位企業管理系統</strong></div>
+<div class="header"><strong id="headerTitle">企業管理系統</strong></div>
 
 <div id="page-sale" class="page active">
     <div class="card">
         <h3>💰 銷貨結帳</h3>
         <label>選擇商品</label><select id="saleItem"></select>
-        <label>客戶名稱</label><input type="text" id="saleCustomer" placeholder="預設：一般散客">
+        <label>選擇客戶</label><select id="saleClient"></select>
         <label>付款方式</label>
         <select id="paymentMethod">
-            <option>現金</option><option>信用卡</option><option>Line Pay</option><option>台灣Pay</option><option>匯款</option>
+            <option>現金</option><option>信用卡</option><option>Line Pay</option><option>匯款</option>
         </select>
         <div style="display:flex; gap:10px">
             <div style="flex:1"><label>數量</label><input type="number" id="saleQty" value="1"></div>
-            <div style="flex:1"><label>折扣 (1=原價)</label><input type="number" id="saleDiscount" value="1" step="0.1"></div>
+            <div style="flex:1"><label>折扣</label><input type="number" id="saleDiscount" value="1" step="0.1"></div>
         </div>
-        <button class="btn" style="background:var(--primary)" onclick="doSale()">確認出貨</button>
+        <button class="btn" style="background:var(--primary)" onclick="doSale()">確認結帳</button>
     </div>
 </div>
 
-<div id="page-add" class="page">
+<div id="page-buy" class="page">
     <div class="card">
         <h3>📥 進貨入庫</h3>
-        <label>商品名稱</label><input type="text" id="buyName" placeholder="例如：無線鼠標">
-        <label>供應廠商</label><input type="text" id="buySupplier" placeholder="來源廠商名稱">
-        <label>圖片網址</label><input type="text" id="buyImg" placeholder="https://...">
+        <label>商品名稱</label><input type="text" id="buyName">
+        <label>選擇廠商</label><select id="buySupplier"></select>
         <div style="display:flex; gap:10px">
             <div style="flex:1"><label>數量</label><input type="number" id="buyQty"></div>
-            <div style="flex:1"><label>採購單價</label><input type="number" id="buyPrice"></div>
+            <div style="flex:1"><label>單價</label><input type="number" id="buyPrice"></div>
         </div>
         <button class="btn" style="background:var(--success)" onclick="doBuy()">完成進貨</button>
     </div>
@@ -93,132 +72,123 @@
 
 <div id="page-stock" class="page">
     <div class="card">
-        <h3>📦 雲端即時庫存</h3>
-        <button onclick="syncFromCloud()" style="margin-bottom:15px; padding:8px; font-size:0.8rem; background:#eee; border:none; border-radius:5px;">🔄 刷新數據</button>
+        <h3>📦 即時庫存</h3>
         <div id="stockList"></div>
     </div>
 </div>
 
+<div id="page-contacts" class="page">
+    <div class="card">
+        <h3>👥 新增客戶/廠商</h3>
+        <select id="contactType"><option value="Clients">客戶</option><option value="Suppliers">廠商</option></select>
+        <input type="text" id="contactName" placeholder="名稱">
+        <input type="text" id="contactPhone" placeholder="電話/聯絡資訊">
+        <button class="btn" style="background:var(--dark)" onclick="addContact()">儲存資料</button>
+    </div>
+    <div class="card">
+        <h3>📋 現有名單</h3>
+        <div style="display:flex; gap:5px; margin-bottom:10px;">
+            <button onclick="loadContacts('Clients')" style="flex:1">看客戶</button>
+            <button onclick="loadContacts('Suppliers')" style="flex:1">看廠商</button>
+        </div>
+        <div id="contactList" class="list-box"></div>
+    </div>
+</div>
+
 <div class="nav-bar">
-    <div class="nav-item active" onclick="showPage('sale', this)"><div class="nav-icon">💰</div>銷貨</div>
-    <div class="nav-item" onclick="showPage('add', this)"><div class="nav-icon">📥</div>進貨</div>
-    <div class="nav-item" onclick="showPage('stock', this)"><div class="nav-icon">📦</div>庫存</div>
+    <div class="nav-item active" onclick="showPage('sale', this)">💰銷貨</div>
+    <div class="nav-item" onclick="showPage('buy', this)">📥進貨</div>
+    <div class="nav-item" onclick="showPage('stock', this)">📦庫存</div>
+    <div class="nav-item" onclick="showPage('contacts', this)">👥名單</div>
 </div>
 
 <script>
-    // --------------------------------------------------
-    // ⚠️ 請在此處貼上你的 Google Apps Script URL ⚠️
-    const API_URL = "https://script.google.com/macros/s/AKfycbymN7tFDVzZhi7HUanHBh9YKP07lgV1M4LrgNT7E5igPQU39KuGIIsxW-BWw4CMBPhcjA/exec";
-    // --------------------------------------------------
+    const API_URL = "https://script.google.com/macros/s/AKfycbymN7tFDVzZhi7HUanHBh9YKP07lgV1M4LrgNT7E5igPQU39KuGIIsxW-BWw4CMBPhcjA/exec"; // ⬅️ 務必替換！
+    let inventory = [], clients = [], suppliers = [], currentUser = "";
 
-    let inventory = [];
-    let currentUser = "";
-
-    // 登入驗證
     async function checkLogin() {
         const acc = document.getElementById('acc').value;
         const pwd = document.getElementById('pwd').value;
-        if(!acc || !pwd) return alert("請輸入帳密");
-        
         showLoading(true);
         try {
-            const resp = await fetch(`${API_URL}?type=login&acc=${acc}&pwd=${pwd}`);
-            const result = await resp.json();
-            if (result.status === "success") {
-                currentUser = result.name;
+            const r = await fetch(`${API_URL}?type=login&acc=${acc}&pwd=${pwd}`);
+            const res = await r.json();
+            if(res.status === "success") {
+                currentUser = res.name;
                 document.getElementById('loginOverlay').style.display = 'none';
-                document.getElementById('headerTitle').innerText = "歡迎，" + currentUser;
-                syncFromCloud();
-            } else {
-                alert("帳號或密碼錯誤！");
-            }
-        } catch (e) { alert("連線失敗，請檢查網路或 API 網址"); }
+                document.getElementById('headerTitle').innerText = "人員：" + currentUser;
+                syncAll();
+            } else { alert("帳密錯誤"); }
+        } catch(e) { alert("同步失敗"); }
         showLoading(false);
     }
 
-    // 同步雲端庫存
-    async function syncFromCloud() {
+    async function syncAll() {
         showLoading(true);
-        try {
-            const response = await fetch(API_URL);
-            const data = await response.json();
-            inventory = data.map(row => ({
-                name: row[0], qty: row[1], price: row[2], supplier: row[3], img: row[4]
-            }));
-            render();
-        } catch (e) { console.error("同步失敗"); }
+        // 同時抓取三個分頁
+        const [stockRes, clientRes, suppRes] = await Promise.all([
+            fetch(`${API_URL}?sheet=Stock`).then(r => r.json()),
+            fetch(`${API_URL}?sheet=Clients`).then(r => r.json()),
+            fetch(`${API_URL}?sheet=Suppliers`).then(r => r.json())
+        ]);
+        inventory = stockRes;
+        clients = clientRes;
+        suppliers = suppRes;
+        renderAll();
         showLoading(false);
     }
 
-    function render() {
-        // 更新銷貨下拉選單
-        const saleSelect = document.getElementById('saleItem');
-        saleSelect.innerHTML = inventory.map(i => `<option value="${i.name}">${i.name} (剩:${i.qty})</option>`).join('');
-
-        // 更新庫存列表
-        const stockList = document.getElementById('stockList');
-        stockList.innerHTML = inventory.map(i => `
-            <div class="list-item">
-                <img src="${i.img || 'https://via.placeholder.com/50'}" class="item-img">
-                <div style="flex:1"><b>${i.name}</b><br><small>單價: $${i.price} | 廠商: ${i.supplier || '無'}</small></div>
-                <div style="text-align:right">
-                    <b style="color:${i.qty <= 5 ? 'red' : 'inherit'}">${i.qty}</b><br>
-                    <span class="status-tag" style="background:${i.qty <= 5 ? '#ffebee' : '#e8f5e9'}">${i.qty <= 5 ? '補貨' : '充足'}</span>
-                </div>
-            </div>
-        `).join('') || '<p style="text-align:center; color:#999;">雲端尚無資料</p>';
+    function renderAll() {
+        document.getElementById('saleItem').innerHTML = inventory.map(i => `<option value="${i[0]}">${i[0]} (剩${i[1]})</option>`).join('');
+        document.getElementById('saleClient').innerHTML = clients.map(c => `<option value="${c[0]}">${c[0]}</option>`).join('');
+        document.getElementById('buySupplier').innerHTML = suppliers.map(s => `<option value="${s[0]}">${s[0]}</option>`).join('');
+        document.getElementById('stockList').innerHTML = inventory.map(i => `<div><b>${i[0]}</b>: ${i[1]}件 ($${i[2]})</div>`).join('');
     }
 
-    // 執行進貨
+    async function doSale() {
+        const payload = {
+            action: "sale",
+            name: document.getElementById('saleItem').value,
+            qty: document.getElementById('saleQty').value,
+            customer: document.getElementById('saleClient').value,
+            payment: document.getElementById('paymentMethod').value,
+            total: 0, // 可以在 GAS 計算或此處計算
+            user: currentUser
+        };
+        await postData(payload);
+    }
+
     async function doBuy() {
         const payload = {
             action: "buy",
             name: document.getElementById('buyName').value,
-            qty: parseInt(document.getElementById('buyQty').value),
-            price: parseFloat(document.getElementById('buyPrice').value),
-            supplier: document.getElementById('buySupplier').value,
-            img: document.getElementById('buyImg').value
+            qty: document.getElementById('buyQty').value,
+            price: document.getElementById('buyPrice').value,
+            supplier: document.getElementById('buySupplier').value
         };
-
-        if(!payload.name || isNaN(payload.qty)) return alert("請填寫必要進貨資訊");
-        
-        showLoading(true);
-        try {
-            await fetch(API_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
-            alert("進貨成功！雲端已更新");
-            document.getElementById('buyName').value = '';
-            document.getElementById('buyQty').value = '';
-            setTimeout(syncFromCloud, 1000);
-        } catch (e) { alert("傳送失敗"); }
-        showLoading(false);
+        await postData(payload);
     }
 
-    // 執行銷貨
-    async function doSale() {
-        const name = document.getElementById('saleItem').value;
-        const qty = parseInt(document.getElementById('saleQty').value);
-        const discount = parseFloat(document.getElementById('saleDiscount').value);
-        const item = inventory.find(i => i.name === name);
-
-        if (!item || item.qty < qty) return alert("庫存不足！");
-
+    async function addContact() {
+        const target = document.getElementById('contactType').value;
         const payload = {
-            action: "sale",
-            name: name,
-            qty: qty,
-            customer: document.getElementById('saleCustomer').value || "一般散客",
-            payment: document.getElementById('paymentMethod').value,
-            total: item.price * qty * discount,
-            user: currentUser
+            action: "addContact",
+            targetSheet: target,
+            rowData: [document.getElementById('contactName').value, document.getElementById('contactPhone').value, new Date()]
         };
+        await postData(payload);
+    }
 
+    async function postData(data) {
         showLoading(true);
-        try {
-            await fetch(API_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
-            alert("結帳完成！");
-            setTimeout(syncFromCloud, 1000);
-        } catch (e) { alert("傳送失敗"); }
-        showLoading(false);
+        await fetch(API_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(data) });
+        alert("操作完成");
+        setTimeout(syncAll, 1500);
+    }
+
+    function loadContacts(type) {
+        const data = (type === 'Clients') ? clients : suppliers;
+        document.getElementById('contactList').innerHTML = data.map(d => `<div>👤 ${d[0]} - ${d[1]}</div>`).join('');
     }
 
     function showPage(id, el) {
@@ -228,9 +198,7 @@
         el.classList.add('active');
     }
 
-    function showLoading(show) {
-        document.getElementById('loading').style.display = show ? 'flex' : 'none';
-    }
+    function showLoading(s) { document.getElementById('loading').style.display = s ? 'flex' : 'none'; }
 </script>
 </body>
 </html>
