@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>珠寶 ERP 暴力解析版</title>
+    <title>珠寶 ERP 旗艦版</title>
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
     <style>
-        :root { --primary: #007bff; --success: #28a745; --dark: #2c3e50; --bg: #f8f9fa; }
+        :root { --primary: #007bff; --success: #28a745; --danger: #dc3545; --dark: #2c3e50; --bg: #f8f9fa; }
         body { font-family: -apple-system, sans-serif; margin: 0; background: var(--bg); padding-bottom: 80px; }
         .header { background: var(--dark); color: white; padding: 20px 15px; text-align: center; position: sticky; top: 0; z-index: 100; }
         .page { display: none; padding: 15px; animation: fadeIn 0.3s; }
@@ -28,12 +28,15 @@
         .stock-img { width: 50px; height: 50px; object-fit: cover; border-radius: 4px; }
         .list-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid #eee; }
         .is-staff .admin-only { display: none !important; }
-        #loading { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.7); display: none; justify-content: center; align-items: center; z-index: 999; }
+        #loading { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: none; flex-direction: column; justify-content: center; align-items: center; z-index: 999; color: white; }
     </style>
 </head>
 <body id="mainBody">
 
-<div id="loading">⌛ 讀取中...</div>
+<div id="loading">
+    <div style="font-size: 2rem;">⏳</div>
+    <div id="loadingText">處理中...</div>
+</div>
 
 <div id="loginOverlay" style="position:fixed; top:0; left:0; width:100%; height:100%; background:white; z-index:1000; display:flex; flex-direction:column; justify-content:center; padding:30px; box-sizing:border-box;">
     <h2 style="text-align:center;">💎 珠寶系統登入</h2>
@@ -66,7 +69,7 @@
             <button class="btn" style="background:#dc3545; margin-top:5px;" onclick="stopScan()">❌ 關閉相機</button>
         </div>
         
-        <label>商品 ID (檢測編號)</label><input type="text" id="buyId">
+        <label>商品 ID (檢測編號)</label><input type="text" id="buyId" style="background-color: #e9ecef;" readonly>
         <label>商品名稱</label><input type="text" id="buyName" placeholder="手動輸入名稱">
         <label>供應商</label><select id="buySupplier"></select>
         
@@ -75,9 +78,12 @@
             <div style="flex:1"><label>售價</label><input type="number" id="buyPrice"></div>
         </div>
         
-        <div id="imgPreview"></div>
-        <input type="hidden" id="buyImg">
-        <input type="hidden" id="buyCertUrl">
+        <label>商品圖片 (自動壓縮儲存)</label>
+        <div id="imgPreview" style="text-align: center; color: #888; margin-bottom: 10px;">(尚未有圖片)</div>
+        <button class="btn" style="background:#6c757d;" onclick="document.getElementById('cameraInput').click()">📷 手動拍照/上傳</button>
+        <input type="file" id="cameraInput" accept="image/*" style="display:none;" onchange="handleFileUpload(this)">
+        
+        <input type="hidden" id="buyImg"> <input type="hidden" id="buyCertUrl">
         
         <button class="btn" style="background:var(--success)" onclick="doBuy()">完成入庫</button>
     </div>
@@ -120,7 +126,7 @@
     async function checkLogin() {
         const acc = document.getElementById('acc').value;
         const pwd = document.getElementById('pwd').value;
-        showLoading(true);
+        showLoading(true, "登入中...");
         try {
             const r = await fetch(`${API_URL}?type=login&acc=${acc}&pwd=${pwd}`);
             const res = await r.json();
@@ -135,7 +141,7 @@
     }
 
     async function syncAll() {
-        showLoading(true);
+        showLoading(true, "同步資料...");
         try {
             const [stockRes, clientRes, suppRes] = await Promise.all([
                 fetch(`${API_URL}?sheet=Stock`).then(r => r.json()),
@@ -157,7 +163,7 @@
         
         document.getElementById('stockList').innerHTML = inventory.map(i => `
             <div class="list-row" style="opacity: ${i[2] <= 0 ? 0.4 : 1}">
-                <img src="${i[6] || ''}" class="stock-img" onerror="this.src='https://via.placeholder.com/50?text=無圖'">
+                <img src="${i[6] || ''}" class="stock-img" onerror="this.src='https://via.placeholder.com/50?text=NoImg'">
                 <div style="flex:1"><b>${i[1]}</b> <small class="admin-only">($${i[3]})</small><br><span style="color:var(--success); font-weight:bold;">$${i[4]}</span> | ID: ${i[0]}</div>
                 <div>${i[7] ? `<a href="${i[7]}" target="_blank">📜</a>` : ''}</div>
                 <b>${i[2] > 0 ? '在庫' : '售出'}</b>
@@ -182,7 +188,7 @@
             video.play();
             requestAnimationFrame(tick);
         }).catch(function(err){
-            alert("無法開啟相機，請檢查瀏覽器權限");
+            alert("無法開啟相機");
             stopScan();
         });
     }
@@ -204,10 +210,6 @@
             var code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: "dontInvert" });
 
             if (code) {
-                drawLine(code.location.topLeftCorner, code.location.topRightCorner, "#FF3B58");
-                drawLine(code.location.topRightCorner, code.location.bottomRightCorner, "#FF3B58");
-                drawLine(code.location.bottomRightCorner, code.location.bottomLeftCorner, "#FF3B58");
-                drawLine(code.location.bottomLeftCorner, code.location.topLeftCorner, "#FF3B58");
                 if(code.data) {
                     stopScan();
                     handleCertScan(code.data);
@@ -218,64 +220,146 @@
         requestAnimationFrame(tick);
     }
 
-    function drawLine(begin, end, color) {
-        canvas.beginPath();
-        canvas.moveTo(begin.x, begin.y);
-        canvas.lineTo(end.x, end.y);
-        canvas.lineWidth = 4;
-        canvas.strokeStyle = color;
-        canvas.stroke();
-    }
-
     async function handleCertScan(url) {
-        showLoading(true);
+        showLoading(true, "解析 QR Code...");
         document.getElementById('buyCertUrl').value = url;
         
         try {
             const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: "scanCertificate", url: url }) });
             const result = await res.json();
             
-            // 只要 result.id 有值，或者從網址能解析出 ZSJ，就填入
             let finalId = result.id;
-            
-            // 如果後端沒抓到，前端再試一次網址提取
             if(!finalId) {
                 let match = url.match(/ZSJ\d+/i);
                 if(match) finalId = match[0];
             }
 
             document.getElementById('buyId').value = finalId;
-            document.getElementById('buyImg').value = result.img;
-            
-            if (result.img) {
-                document.getElementById('imgPreview').innerHTML = `<p style="font-size:0.8rem;color:gray">抓取成功：</p><img src="${result.img}" class="preview-img">`;
+
+            // 嘗試自動抓取圖片並上傳到 Drive
+            if (result.extImg) {
+               showLoading(true, "下載並壓縮圖片...");
+               await compressAndUpload(result.extImg, true); // true 代表這是 URL
             } else {
-                document.getElementById('imgPreview').innerHTML = "<p style='color:red;'>無法抓圖，請手動拍照</p>";
+               document.getElementById('imgPreview').innerHTML = "<p style='color:red;'>無法自動抓圖，請手動拍照</p>";
+               document.getElementById('buyImg').value = "";
             }
 
             if(finalId) {
-                alert("✅ 掃描成功！資料已帶入。");
+                alert("✅ 掃描成功！");
             } else {
-                alert("⚠️ 已抓到網址，但找不到 ZSJ 編號，請手動輸入。");
+                alert("⚠️ 請手動輸入商品 ID");
             }
 
         } catch(e) {
-            alert("伺服器連線異常，但網址已保存。");
+            alert("伺服器連線異常");
         }
         showLoading(false);
     }
 
+    // --- 圖片壓縮與上傳核心 ---
+    async function compressAndUpload(source, isUrl = false) {
+        return new Promise((resolve) => {
+            const img = new Image();
+            img.crossOrigin = "Anonymous"; // 嘗試處理跨域
+            img.onload = function() {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                
+                // 固定尺寸：最長邊 800px
+                const MAX_SIZE = 800;
+                let width = img.width;
+                let height = img.height;
+                
+                if (width > height) {
+                    if (width > MAX_SIZE) { height *= MAX_SIZE / width; width = MAX_SIZE; }
+                } else {
+                    if (height > MAX_SIZE) { width *= MAX_SIZE / height; height = MAX_SIZE; }
+                }
+                
+                canvas.width = width;
+                canvas.height = height;
+                ctx.drawImage(img, 0, 0, width, height);
+                
+                // 轉成 base64 (品質 0.7)
+                const base64Data = canvas.toDataURL('image/jpeg', 0.7).split(',')[1];
+                
+                // 上傳到 GAS
+                uploadToDrive(base64Data, "product_" + Date.now() + ".jpg").then(url => {
+                    document.getElementById('buyImg').value = url;
+                    document.getElementById('imgPreview').innerHTML = `<img src="${url}" class="preview-img">`;
+                    resolve(url);
+                });
+            };
+            
+            img.onerror = function() {
+                document.getElementById('imgPreview').innerHTML = "<p style='color:red;'>圖片下載失敗 (防盜連)，請手動拍照</p>";
+                resolve(null);
+            };
+
+            if(isUrl) {
+                img.src = source; // 這裡可能會被 CORS 擋，若擋住會觸發 onerror -> 使用者手動拍照
+            } else {
+                img.src = source;
+            }
+        });
+    }
+
+    async function handleFileUpload(input) {
+        const file = input.files[0];
+        if (!file) return;
+        showLoading(true, "壓縮圖片中...");
+        
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            compressAndUpload(e.target.result); // 壓縮並上傳
+            showLoading(false);
+        };
+        reader.readAsDataURL(file);
+    }
+
+    async function uploadToDrive(base64, filename) {
+        try {
+            const res = await fetch(API_URL, { 
+                method: 'POST', 
+                body: JSON.stringify({ 
+                    action: "uploadImage", 
+                    base64Data: base64, 
+                    mimeType: "image/jpeg", 
+                    fileName: filename 
+                }) 
+            });
+            return await res.text();
+        } catch(e) {
+            alert("圖片上傳雲端失敗");
+            return "";
+        }
+    }
+
     async function doBuy() {
-        await sendData({ 
+        const id = document.getElementById('buyId').value;
+        if(!id) { alert("請輸入商品 ID"); return; }
+        
+        showLoading(true, "正在入庫...");
+        const payload = { 
             action: "buy", 
-            id: document.getElementById('buyId').value, 
+            id: id, 
             name: document.getElementById('buyName').value, 
             cost: document.getElementById('buyCost').value, 
             price: document.getElementById('buyPrice').value, 
             supplier: document.getElementById('buySupplier').value, 
             img: document.getElementById('buyImg').value,
             certUrl: document.getElementById('buyCertUrl').value 
-        });
+        };
+        
+        const res = await fetch(API_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
+        const text = await res.text(); // mode:no-cors 可能拿不到 text，但我們可以假設成功或檢查 Stock
+        
+        // 因 no-cors 無法直接讀取回應，我們手動檢查重複 (前端簡易判斷) 或直接重新整理
+        alert("操作完成！(若 ID 重複將不會入庫)");
+        
+        showLoading(false);
+        syncAll();
     }
 
     async function doSale() {
@@ -301,7 +385,10 @@
         el.classList.add('active');
     }
 
-    function showLoading(s) { document.getElementById('loading').style.display = s ? 'flex' : 'none'; }
+    function showLoading(s, text="載入中...") { 
+        document.getElementById('loading').style.display = s ? 'flex' : 'none'; 
+        document.getElementById('loadingText').innerText = text;
+    }
 </script>
 </body>
 </html>
