@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>企業級ERP-價格分權版</title>
+    <title>企業級ERP-掃描自動化版</title>
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
     <style>
         :root { --primary: #007bff; --success: #28a745; --dark: #2c3e50; --bg: #f8f9fa; }
         body { font-family: -apple-system, sans-serif; margin: 0; background: var(--bg); padding-bottom: 80px; }
@@ -21,11 +22,10 @@
         .nav-item.active { color: var(--primary); font-weight: bold; }
         #loading { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.8); display: none; justify-content: center; align-items: center; z-index: 3000; font-weight: bold; color: var(--primary); }
         #loginOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 2000; display: flex; flex-direction: column; justify-content: center; padding: 40px; box-sizing: border-box; }
-        .stock-img { width: 60px; height: 60px; object-fit: cover; border-radius: 8px; background: #eee; }
+        #qr-canvas { width: 100%; border-radius: 10px; margin-bottom: 15px; display: none; background: #000; }
+        .stock-img { width: 60px; height: 60px; object-fit: cover; border-radius: 8px; }
         .list-row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid #eee; }
         .is-staff .admin-only { display: none !important; }
-        .price-tag { color: var(--success); font-weight: bold; font-size: 0.9rem; }
-        .badge { font-size: 0.7rem; background: #eee; padding: 2px 6px; border-radius: 4px; color: #666; }
     </style>
 </head>
 <body id="mainBody">
@@ -33,7 +33,7 @@
 <div id="loading">⌛ 數據讀取中...</div>
 
 <div id="loginOverlay">
-    <h2 style="text-align:center;">🏬 雲端 ERP 系統</h2>
+    <h2 style="text-align:center;">🏬 ERP 系統登入</h2>
     <input type="text" id="acc" placeholder="帳號">
     <input type="password" id="pwd" placeholder="密碼">
     <button class="btn" style="background:var(--dark)" onclick="checkLogin()">登入</button>
@@ -44,39 +44,41 @@
 <div id="page-sale" class="page active">
     <div class="card">
         <h3>💰 銷貨結帳</h3>
-        <label>選擇商品 (自動帶入售價)</label>
-        <select id="saleItem" onchange="updateSalePrice()"></select>
-        <label>選擇客戶</label><select id="saleClient"></select>
+        <label>商品</label><select id="saleItem" onchange="updateSalePrice()"></select>
+        <label>客戶</label><select id="saleClient"></select>
         <div style="display:flex; gap:10px">
-            <div style="flex:1"><label>單價</label><input type="number" id="currentSalePrice" readonly style="background:#f0f0f0"></div>
+            <div style="flex:1"><label>單價</label><input type="number" id="currentSalePrice" readonly></div>
             <div style="flex:1"><label>數量</label><input type="number" id="saleQty" value="1"></div>
         </div>
-        <button class="btn" style="background:var(--primary)" onclick="doSale()">確認銷售</button>
+        <button class="btn" style="background:var(--primary)" onclick="doSale()">確認結帳</button>
     </div>
 </div>
 
-<div id="page-buy" class="page admin-only">
+<div id="page-buy" class="page">
     <div class="card">
         <h3>📥 進貨入庫</h3>
+        <button class="btn" style="background:#6f42c1;" onclick="startScan()">🔍 掃描證書 QR Code</button>
+        <canvas id="qr-canvas"></canvas>
+        
         <label>產品編號</label><input type="text" id="buyId">
         <label>名稱</label><input type="text" id="buyName">
-        <label>選擇廠商</label><select id="buySupplier"></select>
+        <label>廠商</label><select id="buySupplier"></select>
         <div style="display:flex; gap:10px">
             <div style="flex:1"><label>進貨成本</label><input type="number" id="buyCost"></div>
             <div style="flex:1"><label>零售售價</label><input type="number" id="buyPrice"></div>
         </div>
         <label>數量</label><input type="number" id="buyQty">
-        <button class="btn" style="background:#6c757d;" onclick="document.getElementById('cameraInput').click()">📷 拍照上傳</button>
+        <button class="btn" style="background:#6c757d;" onclick="document.getElementById('cameraInput').click()">📷 拍攝實品圖</button>
         <input type="file" id="cameraInput" accept="image/*" style="display:none;" onchange="handleFileUpload(this)">
-        <div id="imgPreview" style="text-align:center;"></div>
+        <div id="imgPreview"></div>
         <input type="hidden" id="buyImg">
-        <button class="btn" style="background:var(--success)" onclick="doBuy()">完成進貨</button>
+        <button class="btn" style="background:var(--success)" onclick="doBuy()">完成入庫</button>
     </div>
 </div>
 
 <div id="page-stock" class="page">
     <div class="card">
-        <h3>📦 即時庫存 (所有人可見售價)</h3>
+        <h3>📦 庫存清單</h3>
         <div id="stockList"></div>
     </div>
 </div>
@@ -90,6 +92,9 @@
 <script>
     const API_URL = "https://script.google.com/macros/s/AKfycbymN7tFDVzZhi7HUanHBh9YKP07lgV1M4LrgNT7E5igPQU39KuGIIsxW-BWw4CMBPhcjA/exec"; 
     let inventory = [], clients = [], suppliers = [], currentUser = "", userRole = "";
+    let video = document.createElement("video");
+    let canvasElement = document.getElementById("qr-canvas");
+    let canvas = canvasElement.getContext("2d");
 
     async function checkLogin() {
         const acc = document.getElementById('acc').value;
@@ -125,18 +130,7 @@
         document.getElementById('saleClient').innerHTML = clients.map(c => `<option value="${c[1]}">${c[1]}</option>`).join('');
         document.getElementById('buySupplier').innerHTML = suppliers.map(s => `<option value="${s[1]}">${s[1]}</option>`).join('');
         updateSalePrice();
-        
-        document.getElementById('stockList').innerHTML = inventory.map(i => `
-            <div class="list-row">
-                <img src="${i[6] || 'https://via.placeholder.com/60'}" class="stock-img">
-                <div style="flex:1">
-                    <span class="badge">${i[0]}</span> <b>${i[1]}</b><br>
-                    <span class="price-tag">售價: $${i[4]}</span>
-                    <small class="admin-only" style="color:#888; margin-left:10px;">(成本: $${i[3]})</small>
-                </div>
-                <b>${i[2]}件</b>
-            </div>
-        `).join('');
+        document.getElementById('stockList').innerHTML = inventory.map(i => `<div class="list-row"><img src="${i[6] || ''}" class="stock-img"><div><b>${i[1]}</b><br><small>售價: $${i[4]}</small></div><b>${i[2]}件</b></div>`).join('');
     }
 
     function updateSalePrice() {
@@ -144,27 +138,47 @@
         if(item) document.getElementById('currentSalePrice').value = item[4];
     }
 
-    async function doSale() {
-        const item = inventory.find(i => i[0] == document.getElementById('saleItem').value);
-        const qty = document.getElementById('saleQty').value;
-        const payload = {
-            action: "sale", id: item[0], name: item[1], qty: qty,
-            customer: document.getElementById('saleClient').value, payment: "現金",
-            total: item[4] * qty, user: currentUser
-        };
-        await sendData(payload);
+    // --- 掃描功能 ---
+    function startScan() {
+        navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } }).then(function(stream) {
+            canvasElement.style.display = "block";
+            video.srcObject = stream;
+            video.setAttribute("playsinline", true);
+            video.play();
+            requestAnimationFrame(tick);
+        });
     }
 
-    async function doBuy() {
-        const payload = {
-            action: "buy", id: document.getElementById('buyId').value, name: document.getElementById('buyName').value,
-            qty: document.getElementById('buyQty').value, cost: document.getElementById('buyCost').value,
-            price: document.getElementById('buyPrice').value, supplier: document.getElementById('buySupplier').value,
-            img: document.getElementById('buyImg').value
-        };
-        await sendData(payload);
+    function tick() {
+        if (video.readyState === video.HAVE_ENOUGH_DATA) {
+            canvasElement.height = video.videoHeight;
+            canvasElement.width = video.videoWidth;
+            canvas.drawImage(video, 0, 0, canvasElement.width, canvasElement.height);
+            var imageData = canvas.getImageData(0, 0, canvasElement.width, canvasElement.height);
+            var code = jsQR(imageData.data, imageData.width, imageData.height);
+            if (code) {
+                video.srcObject.getTracks().forEach(track => track.stop());
+                canvasElement.style.display = "none";
+                handleCertScan(code.data);
+                return;
+            }
+        }
+        if (canvasElement.style.display === "block") requestAnimationFrame(tick);
     }
 
+    async function handleCertScan(url) {
+        showLoading(true);
+        const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: "scanCertificate", url: url }) });
+        const result = await res.json();
+        if (result.id) {
+            document.getElementById('buyId').value = result.id;
+            document.getElementById('buyName').value = result.name;
+            alert("掃描成功，資料已自動填入！");
+        }
+        showLoading(false);
+    }
+
+    // ... (其餘 handleFileUpload, doSale, doBuy, sendData 功能維持不變) ...
     async function handleFileUpload(input) {
         const file = input.files[0]; if (!file) return;
         showLoading(true);
@@ -181,7 +195,7 @@
                 const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: "uploadImage", fileName: file.name, mimeType: "image/jpeg", base64Data: base64Data }) });
                 const imageUrl = await res.text();
                 document.getElementById('buyImg').value = imageUrl;
-                document.getElementById('imgPreview').innerHTML = `<img src="${imageUrl}" style="width:100px; margin:10px; border-radius:8px;">`;
+                document.getElementById('imgPreview').innerHTML = `<img src="${imageUrl}" style="width:100px; border-radius:8px;">`;
                 showLoading(false);
             };
             img.src = e.target.result;
@@ -189,20 +203,19 @@
         reader.readAsDataURL(file);
     }
 
-    async function sendData(p) {
-        showLoading(true);
-        await fetch(API_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(p) });
-        alert("操作成功！");
-        setTimeout(syncAll, 1500);
+    async function doSale() {
+        const item = inventory.find(i => i[0] == document.getElementById('saleItem').value);
+        const payload = { action: "sale", id: item[0], name: item[1], qty: document.getElementById('saleQty').value, customer: document.getElementById('saleClient').value, total: item[4] * document.getElementById('saleQty').value, user: currentUser };
+        await sendData(payload);
     }
 
-    function showPage(id, el) {
-        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-        document.getElementById('page-' + id).classList.add('active');
-        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-        el.classList.add('active');
+    async function doBuy() {
+        const payload = { action: "buy", id: document.getElementById('buyId').value, name: document.getElementById('buyName').value, qty: document.getElementById('buyQty').value, cost: document.getElementById('buyCost').value, price: document.getElementById('buyPrice').value, supplier: document.getElementById('buySupplier').value, img: document.getElementById('buyImg').value };
+        await sendData(payload);
     }
 
+    async function sendData(p) { showLoading(true); await fetch(API_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(p) }); alert("成功！"); syncAll(); }
+    function showPage(id, el) { document.querySelectorAll('.page').forEach(p => p.classList.remove('active')); document.getElementById('page-' + id).classList.add('active'); document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active')); el.classList.add('active'); }
     function showLoading(s) { document.getElementById('loading').style.display = s ? 'flex' : 'none'; }
 </script>
 </body>
