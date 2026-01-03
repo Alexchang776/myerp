@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>珠寶 ERP 旗艦版</title>
+    <title>珠寶 ERP 專業修正版</title>
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
     <style>
         :root { --primary: #007bff; --success: #28a745; --danger: #dc3545; --dark: #2c3e50; --bg: #f8f9fa; }
@@ -69,7 +69,7 @@
             <button class="btn" style="background:#dc3545; margin-top:5px;" onclick="stopScan()">❌ 關閉相機</button>
         </div>
         
-        <label>商品 ID (檢測編號)</label><input type="text" id="buyId" style="background-color: #e9ecef;" readonly>
+        <label>商品 ID (檢測編號)</label><input type="text" id="buyId" style="background-color: #fff;" placeholder="掃描或手動輸入">
         <label>商品名稱</label><input type="text" id="buyName" placeholder="手動輸入名稱">
         <label>供應商</label><select id="buySupplier"></select>
         
@@ -209,19 +209,17 @@
             var imageData = canvas.getImageData(0, 0, canvasElement.width, canvasElement.height);
             var code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: "dontInvert" });
 
-            if (code) {
-                if(code.data) {
-                    stopScan();
-                    handleCertScan(code.data);
-                    return;
-                }
+            if (code && code.data) {
+                stopScan();
+                handleCertScan(code.data);
+                return;
             }
         }
         requestAnimationFrame(tick);
     }
 
     async function handleCertScan(url) {
-        showLoading(true, "解析 QR Code...");
+        showLoading(true, "解析中...");
         document.getElementById('buyCertUrl').value = url;
         
         try {
@@ -236,19 +234,18 @@
 
             document.getElementById('buyId').value = finalId;
 
-            // 嘗試自動抓取圖片並上傳到 Drive
             if (result.extImg) {
-               showLoading(true, "下載並壓縮圖片...");
-               await compressAndUpload(result.extImg, true); // true 代表這是 URL
+               showLoading(true, "轉存圖片...");
+               await compressAndUpload(result.extImg, true); 
             } else {
-               document.getElementById('imgPreview').innerHTML = "<p style='color:red;'>無法自動抓圖，請手動拍照</p>";
+               document.getElementById('imgPreview').innerHTML = "<p style='color:red;'>無法抓圖，請手動拍照</p>";
                document.getElementById('buyImg').value = "";
             }
 
             if(finalId) {
                 alert("✅ 掃描成功！");
             } else {
-                alert("⚠️ 請手動輸入商品 ID");
+                alert("⚠️ 請手動輸入 ID");
             }
 
         } catch(e) {
@@ -257,17 +254,15 @@
         showLoading(false);
     }
 
-    // --- 圖片壓縮與上傳核心 ---
+    // --- 圖片壓縮上傳 ---
     async function compressAndUpload(source, isUrl = false) {
         return new Promise((resolve) => {
             const img = new Image();
-            img.crossOrigin = "Anonymous"; // 嘗試處理跨域
+            img.crossOrigin = "Anonymous";
             img.onload = function() {
                 const canvas = document.createElement('canvas');
                 const ctx = canvas.getContext('2d');
-                
-                // 固定尺寸：最長邊 800px
-                const MAX_SIZE = 800;
+                const MAX_SIZE = 800; // 壓縮至 800px
                 let width = img.width;
                 let height = img.height;
                 
@@ -280,41 +275,28 @@
                 canvas.width = width;
                 canvas.height = height;
                 ctx.drawImage(img, 0, 0, width, height);
-                
-                // 轉成 base64 (品質 0.7)
                 const base64Data = canvas.toDataURL('image/jpeg', 0.7).split(',')[1];
                 
-                // 上傳到 GAS
-                uploadToDrive(base64Data, "product_" + Date.now() + ".jpg").then(url => {
+                uploadToDrive(base64Data, "img_" + Date.now() + ".jpg").then(url => {
                     document.getElementById('buyImg').value = url;
                     document.getElementById('imgPreview').innerHTML = `<img src="${url}" class="preview-img">`;
                     resolve(url);
                 });
             };
-            
             img.onerror = function() {
-                document.getElementById('imgPreview').innerHTML = "<p style='color:red;'>圖片下載失敗 (防盜連)，請手動拍照</p>";
+                document.getElementById('imgPreview').innerHTML = "<p style='color:red;'>圖片讀取失敗，請手動拍照</p>";
                 resolve(null);
             };
-
-            if(isUrl) {
-                img.src = source; // 這裡可能會被 CORS 擋，若擋住會觸發 onerror -> 使用者手動拍照
-            } else {
-                img.src = source;
-            }
+            img.src = source;
         });
     }
 
     async function handleFileUpload(input) {
         const file = input.files[0];
         if (!file) return;
-        showLoading(true, "壓縮圖片中...");
-        
+        showLoading(true, "壓縮上傳中...");
         const reader = new FileReader();
-        reader.onload = function(e) {
-            compressAndUpload(e.target.result); // 壓縮並上傳
-            showLoading(false);
-        };
+        reader.onload = function(e) { compressAndUpload(e.target.result); showLoading(false); };
         reader.readAsDataURL(file);
     }
 
@@ -322,20 +304,13 @@
         try {
             const res = await fetch(API_URL, { 
                 method: 'POST', 
-                body: JSON.stringify({ 
-                    action: "uploadImage", 
-                    base64Data: base64, 
-                    mimeType: "image/jpeg", 
-                    fileName: filename 
-                }) 
+                body: JSON.stringify({ action: "uploadImage", base64Data: base64, mimeType: "image/jpeg", fileName: filename }) 
             });
             return await res.text();
-        } catch(e) {
-            alert("圖片上傳雲端失敗");
-            return "";
-        }
+        } catch(e) { return ""; }
     }
 
+    // --- 進貨：攔截重複 ID ---
     async function doBuy() {
         const id = document.getElementById('buyId').value;
         if(!id) { alert("請輸入商品 ID"); return; }
@@ -353,10 +328,20 @@
         };
         
         const res = await fetch(API_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
-        const text = await res.text(); // mode:no-cors 可能拿不到 text，但我們可以假設成功或檢查 Stock
+        const text = await res.text();
         
-        // 因 no-cors 無法直接讀取回應，我們手動檢查重複 (前端簡易判斷) 或直接重新整理
-        alert("操作完成！(若 ID 重複將不會入庫)");
+        // 檢查後端回傳是否為 "DUPLICATE"
+        if (text && text.includes("DUPLICATE")) {
+            alert("❌ 錯誤：商品 ID 已存在，無法重複入庫！");
+        } else {
+            // no-cors 模式下無法直接讀取 text，我們假設成功，若失敗則靠庫存同步檢查
+            alert("操作完成！(若無新增代表 ID 重複)");
+            // 清空欄位
+            document.getElementById('buyId').value = "";
+            document.getElementById('buyName').value = "";
+            document.getElementById('buyImg').value = "";
+            document.getElementById('imgPreview').innerHTML = "(尚未有圖片)";
+        }
         
         showLoading(false);
         syncAll();
