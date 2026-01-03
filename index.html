@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>翡翠珠寶 ERP 系統 - 自動圖文版</title>
+    <title>翡翠珠寶 ERP 終極版</title>
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
     <style>
         :root { --primary: #007bff; --success: #28a745; --dark: #2c3e50; --bg: #f8f9fa; }
@@ -23,7 +23,7 @@
         #loading { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.8); display: none; justify-content: center; align-items: center; z-index: 3000; font-weight: bold; color: var(--primary); }
         #loginOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 2000; display: flex; flex-direction: column; justify-content: center; padding: 40px; box-sizing: border-box; }
         #qr-canvas { width: 100%; border-radius: 10px; margin-bottom: 15px; display: none; background: #000; }
-        .preview-img { width: 100%; max-height: 200px; object-fit: contain; border-radius: 10px; margin-top: 10px; background: #eee; }
+        .preview-img { width: 100%; max-height: 200px; object-fit: contain; border-radius: 10px; margin: 10px 0; background: #eee; }
         .stock-img { width: 60px; height: 60px; object-fit: cover; border-radius: 8px; }
         .list-row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid #eee; }
         .is-staff .admin-only { display: none !important; }
@@ -31,13 +31,13 @@
 </head>
 <body id="mainBody">
 
-<div id="loading">⌛ 雲端處理中...</div>
+<div id="loading">⌛ 同步中...</div>
 
 <div id="loginOverlay">
-    <h2 style="text-align:center;">💎 珠寶 ERP 系統</h2>
+    <h2 style="text-align:center;">💎 珠寶 ERP 登入</h2>
     <input type="text" id="acc" placeholder="帳號">
     <input type="password" id="pwd" placeholder="密碼">
-    <button class="btn" style="background:var(--dark)" onclick="checkLogin()">登入</button>
+    <button class="btn" style="background:var(--dark)" onclick="checkLogin()">進入系統</button>
 </div>
 
 <div class="header"><strong id="headerTitle">珠寶雲端管理</strong></div>
@@ -45,12 +45,13 @@
 <div id="page-sale" class="page active">
     <div class="card">
         <h3>💰 銷貨結帳</h3>
-        <label>商品</label><select id="saleItem" onchange="updateSalePrice()"></select>
+        <label>選擇商品</label><select id="saleItem" onchange="updateSalePrice()"></select>
+        <label>客戶</label><select id="saleClient"></select>
         <div style="display:flex; gap:10px">
             <div style="flex:1"><label>建議售價</label><input type="number" id="currentSalePrice" readonly></div>
-            <div style="flex:1"><label>客戶</label><select id="saleClient"></select></div>
+            <div style="flex:1"><label>實售金額</label><input type="number" id="saleFinalPrice"></div>
         </div>
-        <button class="btn" style="background:var(--primary)" onclick="doSale()">確認成交</button>
+        <button class="btn" style="background:var(--primary)" onclick="doSale()">確認銷出</button>
     </div>
 </div>
 
@@ -59,21 +60,15 @@
         <h3>📥 商品進貨</h3>
         <button class="btn" style="background:#6f42c1;" onclick="startScan()">🔍 掃描證書自動帶入</button>
         <canvas id="qr-canvas"></canvas>
-        
-        <label>檢測編號 (ID)</label><input type="text" id="buyId">
-        <label>商品名稱</label><input type="text" id="buyName">
-        
+        <label>產品 ID (或掃描編號)</label><input type="text" id="buyId">
+        <label>名稱</label><input type="text" id="buyName">
+        <label>廠商</label><select id="buySupplier"></select>
         <div style="display:flex; gap:10px">
-            <div style="flex:1"><label>成本</label><input type="number" id="buyCost"></div>
-            <div style="flex:1"><label>售價</label><input type="number" id="buyPrice"></div>
+            <div style="flex:1"><label>進價</label><input type="number" id="buyCost"></div>
+            <div style="flex:1"><label>定價</label><input type="number" id="buyPrice"></div>
         </div>
-        
-        <label>商品照片</label>
         <div id="imgPreview"></div>
-        <button class="btn" style="background:#6c757d;" onclick="document.getElementById('cameraInput').click()">📷 手動拍照(若需換圖)</button>
-        <input type="file" id="cameraInput" accept="image/*" style="display:none;" onchange="handleFileUpload(this)">
         <input type="hidden" id="buyImg">
-        
         <button class="btn" style="background:var(--success)" onclick="doBuy()">完成入庫</button>
     </div>
 </div>
@@ -85,10 +80,21 @@
     </div>
 </div>
 
+<div id="page-contacts" class="page">
+    <div class="card">
+        <h3>👥 名單管理</h3>
+        <select id="contactType"><option value="Clients">客戶</option><option value="Suppliers">廠商</option></select>
+        <input type="text" id="contactName" placeholder="名稱">
+        <input type="text" id="contactPhone" placeholder="電話/備註">
+        <button class="btn" style="background:var(--dark)" onclick="addContact()">儲存名單</button>
+    </div>
+</div>
+
 <div class="nav-bar">
     <div class="nav-item active" onclick="showPage('sale', this)">💰銷貨</div>
     <div class="nav-item admin-only" id="nav-buy" onclick="showPage('buy', this)">📥進貨</div>
     <div class="nav-item" onclick="showPage('stock', this)">📦庫存</div>
+    <div class="nav-item" onclick="showPage('contacts', this)">👥名單</div>
 </div>
 
 <script>
@@ -111,33 +117,32 @@
                 document.getElementById('loginOverlay').style.display = 'none';
                 syncAll();
             } else { alert("帳密錯誤"); }
-        } catch(e) { alert("連線失敗"); }
+        } catch(e) { alert("連線異常"); }
         showLoading(false);
     }
 
     async function syncAll() {
         showLoading(true);
-        const [stockRes, clientRes] = await Promise.all([
+        const [stockRes, clientRes, suppRes] = await Promise.all([
             fetch(`${API_URL}?sheet=Stock`).then(r => r.json()),
-            fetch(`${API_URL}?sheet=Clients`).then(r => r.json())
+            fetch(`${API_URL}?sheet=Clients`).then(r => r.json()),
+            fetch(`${API_URL}?sheet=Suppliers`).then(r => r.json())
         ]);
-        inventory = stockRes; clients = clientRes;
+        inventory = stockRes; clients = clientRes; suppliers = suppRes;
         renderAll();
         showLoading(false);
     }
 
     function renderAll() {
-        const activeStock = inventory.filter(i => i[2] > 0);
-        document.getElementById('saleItem').innerHTML = activeStock.map(i => `<option value="${i[0]}">${i[1]}</option>`).join('');
+        const activeItems = inventory.filter(i => i[2] > 0);
+        document.getElementById('saleItem').innerHTML = activeItems.map(i => `<option value="${i[0]}">${i[1]}</option>`).join('');
         document.getElementById('saleClient').innerHTML = clients.map(c => `<option value="${c[1]}">${c[1]}</option>`).join('');
+        document.getElementById('buySupplier').innerHTML = suppliers.map(s => `<option value="${s[1]}">${s[1]}</option>`).join('');
         updateSalePrice();
         document.getElementById('stockList').innerHTML = inventory.map(i => `
-            <div class="list-row" style="opacity: ${i[2] <= 0 ? 0.4 : 1}">
+            <div class="list-row" style="opacity: ${i[2] <= 0 ? 0.3 : 1}">
                 <img src="${i[6] || ''}" class="stock-img">
-                <div style="flex:1">
-                    <b>${i[1]}</b> <small class="admin-only">($${i[3]})</small><br>
-                    <span style="color:var(--success); font-weight:bold;">$${i[4]}</span> | ID: ${i[0]}
-                </div>
+                <div style="flex:1"><b>${i[1]}</b> <small class="admin-only">($${i[3]})</small><br><span style="color:var(--success); font-weight:bold;">$${i[4]}</span> | ID: ${i[0]}</div>
                 <b>${i[2] > 0 ? '在庫' : '售出'}</b>
             </div>
         `).join('');
@@ -145,7 +150,10 @@
 
     function updateSalePrice() {
         const item = inventory.find(i => i[0] == document.getElementById('saleItem').value);
-        if(item) document.getElementById('currentSalePrice').value = item[4];
+        if(item) {
+            document.getElementById('currentSalePrice').value = item[4];
+            document.getElementById('saleFinalPrice').value = item[4];
+        }
     }
 
     function startScan() {
@@ -184,48 +192,30 @@
             document.getElementById('buyName').value = result.name;
             document.getElementById('buyImg').value = result.img;
             document.getElementById('imgPreview').innerHTML = `<img src="${result.img}" class="preview-img">`;
-            alert("✅ 證書資料與商品照片已帶入！");
+            alert("掃描成功！資料與照片已帶入。");
         }
         showLoading(false);
     }
 
-    async function handleFileUpload(input) {
-        const file = input.files[0]; if (!file) return;
-        showLoading(true);
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const img = new Image();
-            img.onload = async function() {
-                const canvas = document.createElement('canvas'); const maxWidth = 600;
-                let width = img.width, height = img.height;
-                if (width > maxWidth) { height = (height * maxWidth) / width; width = maxWidth; }
-                canvas.width = width; canvas.height = height;
-                canvas.getContext('2d').drawImage(img, 0, 0, width, height);
-                const base64Data = canvas.toDataURL('image/jpeg', 0.7).split(',')[1];
-                const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: "uploadImage", fileName: file.name, mimeType: "image/jpeg", base64Data: base64Data }) });
-                const imageUrl = await res.text();
-                document.getElementById('buyImg').value = imageUrl;
-                document.getElementById('imgPreview').innerHTML = `<img src="${imageUrl}" class="preview-img">`;
-                showLoading(false);
-            };
-            img.src = e.target.result;
-        };
-        reader.readAsDataURL(file);
+    async function doBuy() {
+        await sendData({ action: "buy", id: document.getElementById('buyId').value, name: document.getElementById('buyName').value, cost: document.getElementById('buyCost').value, price: document.getElementById('buyPrice').value, supplier: document.getElementById('buySupplier').value, img: document.getElementById('buyImg').value });
     }
 
     async function doSale() {
         const item = inventory.find(i => i[0] == document.getElementById('saleItem').value);
-        await sendData({ action: "sale", id: item[0], name: item[1], customer: document.getElementById('saleClient').value, total: document.getElementById('currentSalePrice').value, user: currentUser });
+        await sendData({ action: "sale", id: item[0], name: item[1], customer: document.getElementById('saleClient').value, total: document.getElementById('saleFinalPrice').value, user: currentUser, payment: "現金" });
     }
 
-    async function doBuy() {
-        await sendData({ action: "buy", id: document.getElementById('buyId').value, name: document.getElementById('buyName').value, cost: document.getElementById('buyCost').value, price: document.getElementById('buyPrice').value, supplier: "證書進貨", img: document.getElementById('buyImg').value });
+    async function addContact() {
+        const target = document.getElementById('contactType').value;
+        const rowData = [Date.now(), document.getElementById('contactName').value, document.getElementById('contactPhone').value];
+        await sendData({ action: "addContact", targetSheet: target, rowData: rowData });
     }
 
     async function sendData(p) {
         showLoading(true);
         await fetch(API_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(p) });
-        alert("操作成功！");
+        alert("完成！");
         syncAll();
     }
 
