@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>珠寶 ERP 精確掃描版</title>
+    <title>珠寶 ERP 專業版</title>
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
     <style>
         :root { --primary: #007bff; --success: #28a745; --dark: #2c3e50; --bg: #f8f9fa; }
@@ -26,6 +26,7 @@
         .list-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid #eee; }
         #loading { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.7); display: none; justify-content: center; align-items: center; z-index: 999; }
         .is-staff .admin-only { display: none !important; }
+        .vip-tag { background: #fff3cd; color: #856404; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; }
     </style>
 </head>
 <body id="mainBody">
@@ -58,12 +59,12 @@
         <canvas id="qr-canvas"></canvas>
         
         <label>商品 ID (檢測編號)</label><input type="text" id="buyId">
-        <label>商品名稱 (手動輸入)</label><input type="text" id="buyName" placeholder="例如：翡翠掛件">
+        <label>商品名稱</label><input type="text" id="buyName">
         <label>供應商</label><select id="buySupplier"></select>
         
         <div style="display:flex; gap:10px">
             <div style="flex:1"><label>成本</label><input type="number" id="buyCost"></div>
-            <div style="flex:1"><label>定價</label><input type="number" id="buyPrice"></div>
+            <div style="flex:1"><label>售價</label><input type="number" id="buyPrice"></div>
         </div>
         
         <div id="imgPreview"></div>
@@ -85,10 +86,15 @@
     <div class="card">
         <h3>👥 客戶/廠商管理</h3>
         <select id="contactType"><option value="Clients">客戶</option><option value="Suppliers">廠商</option></select>
-        <input type="text" id="contactName" placeholder="名稱">
-        <input type="text" id="contactPhone" placeholder="電話">
-        <input type="text" id="contactNote" placeholder="備註">
+        <label>編號 (ID)</label><input type="text" id="contactId">
+        <label>名稱</label><input type="text" id="contactName">
+        <label>電話</label><input type="text" id="contactPhone">
+        <label>備註/聯絡人</label><input type="text" id="contactNote">
         <button class="btn" style="background:var(--dark)" onclick="addContact()">新增名單</button>
+    </div>
+    <div class="card">
+        <h3>🏆 客戶消費排行榜 (VIP)</h3>
+        <div id="vipDisplay"></div>
     </div>
 </div>
 
@@ -119,7 +125,7 @@
                 document.getElementById('loginOverlay').style.display = 'none';
                 syncAll();
             } else { alert("登入失敗"); }
-        } catch(e) { alert("API 連線失敗"); }
+        } catch(e) { alert("連線失敗"); }
         showLoading(false);
     }
 
@@ -150,6 +156,13 @@
                 <div style="flex:1"><b>${i[1]}</b> <small class="admin-only">($${i[3]})</small><br><span style="color:var(--success); font-weight:bold;">$${i[4]}</span> | ID: ${i[0]}</div>
                 <div>${i[10] ? `<a href="${i[10]}" target="_blank">📜</a>` : ''}</div>
                 <b>${i[2] > 0 ? '在庫' : '售出'}</b>
+            </div>
+        `).join('');
+
+        document.getElementById('vipDisplay').innerHTML = clients.sort((a,b) => b[4]-a[4]).map(c => `
+            <div class="list-row">
+                <div style="flex:1"><b>${c[1]}</b> <span class="vip-tag">LV:${c[4]>100000?'鑽石':'金'}</span><br><small>${c[2]}</small></div>
+                <div style="color:var(--success); font-weight:bold;">$${c[4] || 0}</div>
             </div>
         `).join('');
     }
@@ -190,15 +203,14 @@
         showLoading(true);
         const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: "scanCertificate", url: url }) });
         const result = await res.json();
-        
         if (result.id) {
-            document.getElementById('buyId').value = result.id; // 正確填入商品 ID
-            document.getElementById('buyCertUrl').value = result.rawUrl; // 儲存證書網址
-            document.getElementById('buyImg').value = result.img; // 儲存圖片網址
-            document.getElementById('imgPreview').innerHTML = `<img src="${result.img}" class="preview-img">`;
-            alert("掃描成功！ID 與照片已自動載入，請手動填寫名稱與價格。");
+            document.getElementById('buyId').value = result.id;
+            document.getElementById('buyCertUrl').value = result.rawUrl;
+            document.getElementById('buyImg').value = result.img;
+            document.getElementById('imgPreview').innerHTML = result.img ? `<img src="${result.img}" class="preview-img">` : "找不到商品圖";
+            alert("掃描成功！ID與照片已帶入。");
         } else {
-            alert("讀取成功，但無法從網頁抓取 ID。請手動輸入 ID 並貼上網址。");
+            alert("讀取成功，但無法從網頁抓取 ID，請手動輸入。");
             document.getElementById('buyCertUrl').value = url;
         }
         showLoading(false);
@@ -223,7 +235,14 @@
     }
 
     async function addContact() {
-        await sendData({ action: "addContact", targetSheet: document.getElementById('contactType').value, id: Date.now(), name: document.getElementById('contactName').value, phone: document.getElementById('contactPhone').value, note: document.getElementById('contactNote').value });
+        await sendData({ 
+            action: "addContact", 
+            targetSheet: document.getElementById('contactType').value, 
+            id: document.getElementById('contactId').value, 
+            name: document.getElementById('contactName').value, 
+            phone: document.getElementById('contactPhone').value, 
+            note: document.getElementById('contactNote').value 
+        });
     }
 
     async function sendData(p) {
