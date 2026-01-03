@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>珠寶 ERP 圖片修正版</title>
+    <title>珠寶 ERP 掃描強化版</title>
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
     <style>
         :root { --primary: #007bff; --success: #28a745; --dark: #2c3e50; --bg: #f8f9fa; }
@@ -19,17 +19,22 @@
         .nav-bar { position: fixed; bottom: 0; width: 100%; background: white; display: flex; border-top: 1px solid #ddd; height: 65px; z-index: 100; }
         .nav-item { flex: 1; text-align: center; display: flex; flex-direction: column; justify-content: center; font-size: 0.75rem; color: #888; }
         .nav-item.active { color: var(--primary); font-weight: bold; }
-        #qr-canvas { width: 100%; border-radius: 8px; display: none; margin-bottom: 10px; background: #000; }
-        .preview-img { width: 100%; border-radius: 8px; margin: 10px 0; border: 1px solid #eee; max-height: 300px; object-fit: contain; background: #fff; }
+        
+        /* 掃描區塊樣式優化 */
+        #scan-container { position: relative; display: none; margin-bottom: 15px; }
+        #qr-canvas { width: 100%; border-radius: 8px; background: #000; }
+        #scan-status { position: absolute; top: 10px; left: 0; width: 100%; text-align: center; color: white; text-shadow: 1px 1px 2px black; font-weight: bold; pointer-events: none; }
+        
+        .preview-img { width: 100%; border-radius: 8px; margin: 10px 0; border: 1px solid #eee; max-height: 250px; object-fit: contain; }
         .stock-img { width: 50px; height: 50px; object-fit: cover; border-radius: 4px; }
         .list-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid #eee; }
-        #loading { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.7); display: none; justify-content: center; align-items: center; z-index: 999; }
         .is-staff .admin-only { display: none !important; }
+        #loading { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.7); display: none; justify-content: center; align-items: center; z-index: 999; }
     </style>
 </head>
 <body id="mainBody">
 
-<div id="loading">⌛ 數據同步中...</div>
+<div id="loading">⌛ 讀取中...</div>
 
 <div id="loginOverlay" style="position:fixed; top:0; left:0; width:100%; height:100%; background:white; z-index:1000; display:flex; flex-direction:column; justify-content:center; padding:30px; box-sizing:border-box;">
     <h2 style="text-align:center;">💎 珠寶系統登入</h2>
@@ -53,8 +58,14 @@
 <div id="page-buy" class="page">
     <div class="card">
         <h3>📥 商品進貨</h3>
-        <button class="btn" style="background:#6f42c1;" onclick="startScan()">🔍 掃描鑑定書 QR Code</button>
-        <canvas id="qr-canvas"></canvas>
+        
+        <button class="btn" style="background:#6f42c1;" onclick="startScan()">🔍 開啟相機掃描 QR Code</button>
+        
+        <div id="scan-container">
+            <canvas id="qr-canvas"></canvas>
+            <div id="scan-status">📷 相機啟動中...請對準 QR Code</div>
+            <button class="btn" style="background:#dc3545; margin-top:5px;" onclick="stopScan()">❌ 關閉相機</button>
+        </div>
         
         <label>商品 ID (檢測編號)</label><input type="text" id="buyId">
         <label>商品名稱</label><input type="text" id="buyName" placeholder="手動輸入名稱">
@@ -62,7 +73,7 @@
         
         <div style="display:flex; gap:10px">
             <div style="flex:1"><label>成本</label><input type="number" id="buyCost"></div>
-            <div style="flex:1"><label>定價</label><input type="number" id="buyPrice"></div>
+            <div style="flex:1"><label>售價</label><input type="number" id="buyPrice"></div>
         </div>
         
         <div id="imgPreview"></div>
@@ -84,10 +95,10 @@
     <div class="card">
         <h3>👥 名單管理</h3>
         <select id="contactType"><option value="Clients">客戶</option><option value="Suppliers">廠商</option></select>
-        <label>編號 (ID)</label><input type="text" id="contactId">
-        <label>名稱</label><input type="text" id="contactName">
-        <label>電話</label><input type="text" id="contactPhone">
-        <label>備註</label><input type="text" id="contactNote">
+        <input type="text" id="contactId" placeholder="編號">
+        <input type="text" id="contactName" placeholder="名稱">
+        <input type="text" id="contactPhone" placeholder="電話">
+        <input type="text" id="contactNote" placeholder="備註">
         <button class="btn" style="background:var(--dark)" onclick="addContact()">新增名單</button>
     </div>
 </div>
@@ -105,6 +116,7 @@
     let video = document.createElement("video");
     let canvasElement = document.getElementById("qr-canvas");
     let canvas = canvasElement.getContext("2d");
+    let scanning = false;
 
     async function checkLogin() {
         const acc = document.getElementById('acc').value;
@@ -118,8 +130,8 @@
                 if(userRole === "staff") document.getElementById('mainBody').classList.add('is-staff');
                 document.getElementById('loginOverlay').style.display = 'none';
                 syncAll();
-            } else { alert("登入失敗"); }
-        } catch(e) { alert("API 連線失敗"); }
+            } else { alert("帳密錯誤"); }
+        } catch(e) { alert("連線失敗"); }
         showLoading(false);
     }
 
@@ -159,57 +171,100 @@
         if(item) document.getElementById('saleFinalPrice').value = item[4];
     }
 
+    // --- 強化版掃描邏輯 ---
     function startScan() {
+        scanning = true;
+        document.getElementById("scan-container").style.display = "block";
+        document.getElementById("scan-status").innerText = "📷 正在開啟相機...";
+        
         navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } }).then(function(stream) {
-            canvasElement.style.display = "block";
             video.srcObject = stream;
-            video.setAttribute("playsinline", true);
+            video.setAttribute("playsinline", true); // 重要：iOS 支援
             video.play();
             requestAnimationFrame(tick);
+        }).catch(function(err){
+            alert("無法開啟相機，請檢查權限");
+            stopScan();
         });
     }
 
+    function stopScan() {
+        scanning = false;
+        if(video.srcObject) {
+            video.srcObject.getTracks().forEach(track => track.stop());
+        }
+        document.getElementById("scan-container").style.display = "none";
+    }
+
     function tick() {
+        if (!scanning) return;
+        
         if (video.readyState === video.HAVE_ENOUGH_DATA) {
+            document.getElementById("scan-status").innerText = "🔍 搜尋 QR Code 中...";
             canvasElement.height = video.videoHeight;
             canvasElement.width = video.videoWidth;
             canvas.drawImage(video, 0, 0, canvasElement.width, canvasElement.height);
+            
             var imageData = canvas.getImageData(0, 0, canvasElement.width, canvasElement.height);
-            var code = jsQR(imageData.data, imageData.width, imageData.height);
+            var code = jsQR(imageData.data, imageData.width, imageData.height, {
+                inversionAttempts: "dontInvert",
+            });
+
             if (code) {
-                video.srcObject.getTracks().forEach(track => track.stop());
-                canvasElement.style.display = "none";
-                handleCertScan(code.data);
-                return;
+                // 畫出紅框表示偵測成功
+                drawLine(code.location.topLeftCorner, code.location.topRightCorner, "#FF3B58");
+                drawLine(code.location.topRightCorner, code.location.bottomRightCorner, "#FF3B58");
+                drawLine(code.location.bottomRightCorner, code.location.bottomLeftCorner, "#FF3B58");
+                drawLine(code.location.bottomLeftCorner, code.location.topLeftCorner, "#FF3B58");
+                
+                if(code.data) {
+                    stopScan(); // 停止掃描
+                    handleCertScan(code.data); // 處理資料
+                    return;
+                }
             }
         }
-        if (canvasElement.style.display === "block") requestAnimationFrame(tick);
+        requestAnimationFrame(tick);
+    }
+
+    function drawLine(begin, end, color) {
+        canvas.beginPath();
+        canvas.moveTo(begin.x, begin.y);
+        canvas.lineTo(end.x, end.y);
+        canvas.lineWidth = 4;
+        canvas.strokeStyle = color;
+        canvas.stroke();
     }
 
     async function handleCertScan(url) {
         showLoading(true);
+        // 先顯示網址以防解析失敗
+        document.getElementById('buyCertUrl').value = url;
+        
         try {
             const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: "scanCertificate", url: url }) });
             const result = await res.json();
             
             if (result.id) {
                 document.getElementById('buyId').value = result.id;
-                document.getElementById('buyCertUrl').value = url;
                 document.getElementById('buyImg').value = result.img;
                 
                 if (result.img) {
                     document.getElementById('imgPreview').innerHTML = `
-                        <p style="font-size:0.8rem; color:gray;">已自動抓取鑑定照片：</p>
-                        <img src="${result.img}" class="preview-img" onerror="this.style.display='none'; document.getElementById('imgError').innerText='圖片伺服器拒絕訪問，請手動拍照。'">
-                        <span id="imgError" style="color:red; font-size:0.8rem;"></span>
-                    `;
+                        <p style="font-size:0.8rem; color:gray;">已自動抓取圖片：</p>
+                        <img src="${result.img}" class="preview-img" onerror="this.src='https://via.placeholder.com/150?text=圖片載入失敗'">`;
+                } else {
+                    document.getElementById('imgPreview').innerHTML = "<p style='color:red;'>抓取圖片失敗，請手動拍照。</p>";
                 }
-                alert("掃描成功！");
+                alert("✅ 掃描成功！ID 與網址已帶入。");
             } else {
-                alert("解析成功，但未能抓取編號。請手動輸入。");
+                // 解析失敗但有網址，嘗試從網址提取 ID (fallback)
+                let fallbackId = url.match(/ZSJ\d+/i) ? url.match(/ZSJ\d+/i)[0] : "";
+                document.getElementById('buyId').value = fallbackId;
+                alert("已讀取網址，請確認商品 ID。");
             }
         } catch(e) {
-            alert("系統繁忙，請稍後再試。");
+            alert("解析伺服器連線異常，已保留網址。");
         }
         showLoading(false);
     }
