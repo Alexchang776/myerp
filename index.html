@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>企業級ERP-掃描自動化版</title>
+    <title>專業珠寶ERP-自動掃描版</title>
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
     <style>
         :root { --primary: #007bff; --success: #28a745; --dark: #2c3e50; --bg: #f8f9fa; }
@@ -23,23 +23,23 @@
         #loading { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.8); display: none; justify-content: center; align-items: center; z-index: 3000; font-weight: bold; color: var(--primary); }
         #loginOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 2000; display: flex; flex-direction: column; justify-content: center; padding: 40px; box-sizing: border-box; }
         #qr-canvas { width: 100%; border-radius: 10px; margin-bottom: 15px; display: none; background: #000; }
-        .stock-img { width: 60px; height: 60px; object-fit: cover; border-radius: 8px; }
+        .stock-img { width: 60px; height: 60px; object-fit: cover; border-radius: 8px; background: #eee; }
         .list-row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid #eee; }
         .is-staff .admin-only { display: none !important; }
     </style>
 </head>
 <body id="mainBody">
 
-<div id="loading">⌛ 數據讀取中...</div>
+<div id="loading">⌛ 處理中...</div>
 
 <div id="loginOverlay">
-    <h2 style="text-align:center;">🏬 ERP 系統登入</h2>
+    <h2 style="text-align:center;">🏬 雲端珠寶管理系統</h2>
     <input type="text" id="acc" placeholder="帳號">
     <input type="password" id="pwd" placeholder="密碼">
     <button class="btn" style="background:var(--dark)" onclick="checkLogin()">登入</button>
 </div>
 
-<div class="header"><strong id="headerTitle">企業管理系統</strong></div>
+<div class="header"><strong id="headerTitle">珠寶 ERP 系統</strong></div>
 
 <div id="page-sale" class="page active">
     <div class="card">
@@ -47,7 +47,7 @@
         <label>商品</label><select id="saleItem" onchange="updateSalePrice()"></select>
         <label>客戶</label><select id="saleClient"></select>
         <div style="display:flex; gap:10px">
-            <div style="flex:1"><label>單價</label><input type="number" id="currentSalePrice" readonly></div>
+            <div style="flex:1"><label>售價</label><input type="number" id="currentSalePrice" readonly style="background:#f9f9f9"></div>
             <div style="flex:1"><label>數量</label><input type="number" id="saleQty" value="1"></div>
         </div>
         <button class="btn" style="background:var(--primary)" onclick="doSale()">確認結帳</button>
@@ -60,25 +60,25 @@
         <button class="btn" style="background:#6f42c1;" onclick="startScan()">🔍 掃描證書 QR Code</button>
         <canvas id="qr-canvas"></canvas>
         
-        <label>產品編號</label><input type="text" id="buyId">
-        <label>名稱</label><input type="text" id="buyName">
-        <label>廠商</label><select id="buySupplier"></select>
+        <label>檢測編號 (ID)</label><input type="text" id="buyId">
+        <label>商品名稱 (含規格)</label><input type="text" id="buyName">
+        <label>供應商</label><select id="buySupplier"></select>
         <div style="display:flex; gap:10px">
             <div style="flex:1"><label>進貨成本</label><input type="number" id="buyCost"></div>
-            <div style="flex:1"><label>零售售價</label><input type="number" id="buyPrice"></div>
+            <div style="flex:1"><label>預設售價</label><input type="number" id="buyPrice"></div>
         </div>
-        <label>數量</label><input type="number" id="buyQty">
+        <label>數量</label><input type="number" id="buyQty" value="1">
         <button class="btn" style="background:#6c757d;" onclick="document.getElementById('cameraInput').click()">📷 拍攝實品圖</button>
         <input type="file" id="cameraInput" accept="image/*" style="display:none;" onchange="handleFileUpload(this)">
-        <div id="imgPreview"></div>
+        <div id="imgPreview" style="text-align:center;"></div>
         <input type="hidden" id="buyImg">
-        <button class="btn" style="background:var(--success)" onclick="doBuy()">完成入庫</button>
+        <button class="btn" style="background:var(--success)" onclick="doBuy()">完成進貨</button>
     </div>
 </div>
 
 <div id="page-stock" class="page">
     <div class="card">
-        <h3>📦 庫存清單</h3>
+        <h3>📦 現有庫存清單</h3>
         <div id="stockList"></div>
     </div>
 </div>
@@ -108,8 +108,8 @@
                 if(userRole === "staff") document.getElementById('mainBody').classList.add('is-staff');
                 document.getElementById('loginOverlay').style.display = 'none';
                 syncAll();
-            } else { alert("帳密錯誤"); }
-        } catch(e) { alert("連線失敗"); }
+            } else { alert("登入失敗"); }
+        } catch(e) { alert("無法連線至雲端"); }
         showLoading(false);
     }
 
@@ -130,7 +130,17 @@
         document.getElementById('saleClient').innerHTML = clients.map(c => `<option value="${c[1]}">${c[1]}</option>`).join('');
         document.getElementById('buySupplier').innerHTML = suppliers.map(s => `<option value="${s[1]}">${s[1]}</option>`).join('');
         updateSalePrice();
-        document.getElementById('stockList').innerHTML = inventory.map(i => `<div class="list-row"><img src="${i[6] || ''}" class="stock-img"><div><b>${i[1]}</b><br><small>售價: $${i[4]}</small></div><b>${i[2]}件</b></div>`).join('');
+        document.getElementById('stockList').innerHTML = inventory.map(i => `
+            <div class="list-row">
+                <img src="${i[6] || 'https://via.placeholder.com/60'}" class="stock-img">
+                <div style="flex:1">
+                    <b>${i[1]}</b><br>
+                    <small>售價: $${i[4]}</small>
+                    <small class="admin-only" style="margin-left:5px; color:#888;">(成本: $${i[3]})</small>
+                </div>
+                <b>${i[2]}件</b>
+            </div>
+        `).join('');
     }
 
     function updateSalePrice() {
@@ -138,7 +148,7 @@
         if(item) document.getElementById('currentSalePrice').value = item[4];
     }
 
-    // --- 掃描功能 ---
+    // --- 相機掃描邏輯 ---
     function startScan() {
         navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } }).then(function(stream) {
             canvasElement.style.display = "block";
@@ -168,17 +178,18 @@
 
     async function handleCertScan(url) {
         showLoading(true);
-        const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: "scanCertificate", url: url }) });
-        const result = await res.json();
-        if (result.id) {
-            document.getElementById('buyId').value = result.id;
-            document.getElementById('buyName').value = result.name;
-            alert("掃描成功，資料已自動填入！");
-        }
+        try {
+            const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: "scanCertificate", url: url }) });
+            const result = await res.json();
+            if (result.id) {
+                document.getElementById('buyId').value = result.id;
+                document.getElementById('buyName').value = result.name;
+                alert("✅ 證書解析成功");
+            }
+        } catch(e) { alert("❌ 解析失敗"); }
         showLoading(false);
     }
 
-    // ... (其餘 handleFileUpload, doSale, doBuy, sendData 功能維持不變) ...
     async function handleFileUpload(input) {
         const file = input.files[0]; if (!file) return;
         showLoading(true);
@@ -195,7 +206,7 @@
                 const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: "uploadImage", fileName: file.name, mimeType: "image/jpeg", base64Data: base64Data }) });
                 const imageUrl = await res.text();
                 document.getElementById('buyImg').value = imageUrl;
-                document.getElementById('imgPreview').innerHTML = `<img src="${imageUrl}" style="width:100px; border-radius:8px;">`;
+                document.getElementById('imgPreview').innerHTML = `<img src="${imageUrl}" style="width:100px; margin-top:10px; border-radius:8px;">`;
                 showLoading(false);
             };
             img.src = e.target.result;
@@ -214,8 +225,20 @@
         await sendData(payload);
     }
 
-    async function sendData(p) { showLoading(true); await fetch(API_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(p) }); alert("成功！"); syncAll(); }
-    function showPage(id, el) { document.querySelectorAll('.page').forEach(p => p.classList.remove('active')); document.getElementById('page-' + id).classList.add('active'); document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active')); el.classList.add('active'); }
+    async function sendData(p) {
+        showLoading(true);
+        await fetch(API_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(p) });
+        alert("操作完成");
+        setTimeout(syncAll, 1000);
+    }
+
+    function showPage(id, el) {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.getElementById('page-' + id).classList.add('active');
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+        el.classList.add('active');
+    }
+
     function showLoading(s) { document.getElementById('loading').style.display = s ? 'flex' : 'none'; }
 </script>
 </body>
