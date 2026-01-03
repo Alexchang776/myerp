@@ -3,9 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>企業級雲端ERP-權限版</title>
+    <title>企業級ERP-全功能終極版</title>
     <style>
         :root { --primary: #007bff; --success: #28a745; --dark: #2c3e50; --bg: #f8f9fa; }
         body { font-family: -apple-system, sans-serif; margin: 0; background: var(--bg); padding-bottom: 80px; }
@@ -25,9 +23,8 @@
         #loginOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 2000; display: flex; flex-direction: column; justify-content: center; padding: 40px; box-sizing: border-box; }
         .stock-img { width: 60px; height: 60px; object-fit: cover; border-radius: 8px; background: #eee; }
         .list-row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid #eee; }
-        
-        /* 權限控制：員工隱藏類別 */
         .is-staff .admin-only { display: none !important; }
+        .badge { font-size: 0.7rem; background: #eee; padding: 2px 6px; border-radius: 4px; color: #666; }
     </style>
 </head>
 <body id="mainBody">
@@ -35,7 +32,7 @@
 <div id="loading">⌛ 雲端處理中...</div>
 
 <div id="loginOverlay">
-    <h2 style="text-align:center;">🏬 企業管理系統登入</h2>
+    <h2 style="text-align:center;">🏬 ERP 系統登入</h2>
     <input type="text" id="acc" placeholder="帳號">
     <input type="password" id="pwd" placeholder="密碼">
     <button class="btn" style="background:var(--dark)" onclick="checkLogin()">登入</button>
@@ -48,6 +45,10 @@
         <h3>💰 銷貨結帳</h3>
         <label>選擇商品</label><select id="saleItem"></select>
         <label>選擇客戶</label><select id="saleClient"></select>
+        <label>付款方式</label>
+        <select id="paymentMethod">
+            <option>現金</option><option>信用卡</option><option>Line Pay</option><option>匯款</option>
+        </select>
         <div style="display:flex; gap:10px">
             <div style="flex:1"><label>數量</label><input type="number" id="saleQty" value="1"></div>
             <div style="flex:1" class="admin-only"><label>折扣</label><input type="number" id="saleDiscount" value="1" step="0.1"></div>
@@ -58,14 +59,14 @@
 
 <div id="page-buy" class="page">
     <div class="card">
-        <h3>📥 進貨入庫 (管理員專用)</h3>
+        <h3>📥 進貨入庫</h3>
+        <label>產品編號 (ID)</label><input type="text" id="buyId" placeholder="例如: P001">
         <label>商品名稱</label><input type="text" id="buyName">
-        <label>廠商</label><select id="buySupplier"></select>
+        <label>選擇廠商</label><select id="buySupplier"></select>
         <div style="display:flex; gap:10px">
             <div style="flex:1"><label>數量</label><input type="number" id="buyQty"></div>
-            <div style="flex:1"><label>進貨單價</label><input type="number" id="buyPrice"></div>
+            <div style="flex:1"><label>單價</label><input type="number" id="buyPrice"></div>
         </div>
-        <label>拍照</label>
         <button class="btn" style="background:#6c757d;" onclick="document.getElementById('cameraInput').click()">📷 拍攝商品圖</button>
         <input type="file" id="cameraInput" accept="image/*" style="display:none;" onchange="handleFileUpload(this)">
         <div id="imgPreview" style="text-align:center;"></div>
@@ -83,11 +84,20 @@
 
 <div id="page-contacts" class="page">
     <div class="card">
-        <h3>👥 新增聯絡人</h3>
+        <h3>👥 建立名單資料</h3>
         <select id="contactType"><option value="Clients">客戶</option><option value="Suppliers">廠商</option></select>
-        <input type="text" id="contactName" placeholder="名稱">
-        <input type="text" id="contactPhone" placeholder="電話">
+        <label>編號 (ID)</label><input type="text" id="contactId" placeholder="ID">
+        <label>名稱</label><input type="text" id="contactName">
+        <label>電話/備註</label><input type="text" id="contactPhone">
         <button class="btn" style="background:var(--dark)" onclick="addContact()">儲存</button>
+    </div>
+    <div class="card">
+        <h3>📋 名單列表 (含累積消費)</h3>
+        <div style="display:flex; gap:5px; margin-bottom:10px;">
+            <button onclick="loadContacts('Clients')" style="flex:1">看客戶</button>
+            <button onclick="loadContacts('Suppliers')" style="flex:1">看廠商</button>
+        </div>
+        <div id="contactDisplay"></div>
     </div>
 </div>
 
@@ -110,16 +120,9 @@
             const r = await fetch(`${API_URL}?type=login&acc=${acc}&pwd=${pwd}`);
             const res = await r.json();
             if(res.status === "success") {
-                currentUser = res.name;
-                userRole = res.role; // 獲取權限
-                
-                // 如果是員工，加入權限鎖
-                if(userRole === "staff") {
-                    document.getElementById('mainBody').classList.add('is-staff');
-                }
-                
+                currentUser = res.name; userRole = res.role;
+                if(userRole === "staff") document.getElementById('mainBody').classList.add('is-staff');
                 document.getElementById('loginOverlay').style.display = 'none';
-                document.getElementById('headerTitle').innerText = "歡迎：" + currentUser + "(" + userRole + ")";
                 syncAll();
             } else { alert("帳密錯誤"); }
         } catch(e) { alert("連線失敗"); }
@@ -139,32 +142,43 @@
     }
 
     function renderAll() {
-        document.getElementById('saleItem').innerHTML = inventory.map(i => `<option value="${i[0]}">${i[0]} (剩${i[1]})</option>`).join('');
-        document.getElementById('saleClient').innerHTML = clients.map(c => `<option value="${c[0]}">${c[0]}</option>`).join('');
-        document.getElementById('buySupplier').innerHTML = suppliers.map(s => `<option value="${s[0]}">${s[0]}</option>`).join('');
+        document.getElementById('saleItem').innerHTML = inventory.map(i => `<option value="${i[0]}">[${i[0]}] ${i[1]} (剩${i[2]})</option>`).join('');
+        document.getElementById('saleClient').innerHTML = clients.map(c => `<option value="${c[1]}">${c[1]}</option>`).join('');
+        document.getElementById('buySupplier').innerHTML = suppliers.map(s => `<option value="${s[1]}">${s[1]}</option>`).join('');
         
         document.getElementById('stockList').innerHTML = inventory.map(i => `
             <div class="list-row">
-                <img src="${i[4] || 'https://via.placeholder.com/60'}" class="stock-img">
+                <img src="${i[5] || 'https://via.placeholder.com/60'}" class="stock-img">
                 <div style="flex:1">
-                    <b>${i[0]}</b><br>
-                    <small class="admin-only">進價: $${i[2]} | 廠商: ${i[3]}</small>
+                    <span class="badge">#${i[0]}</span> <b>${i[1]}</b><br>
+                    <small class="admin-only">成本: $${i[3]} | 廠商: ${i[4]}</small>
                 </div>
-                <div style="text-align:right"><b>${i[1]}件</b></div>
+                <b>${i[2]}件</b>
+            </div>
+        `).join('');
+    }
+
+    function loadContacts(type) {
+        const data = (type === 'Clients') ? clients : suppliers;
+        document.getElementById('contactDisplay').innerHTML = data.map(d => `
+            <div class="list-row">
+                <div style="flex:1">
+                    <span class="badge">${d[0]}</span> <b>${d[1]}</b><br>
+                    <small>${d[2]}</small>
+                </div>
+                ${type === 'Clients' ? `<div style="color:var(--success); font-weight:bold;">$${d[4] || 0}</div>` : ''}
             </div>
         `).join('');
     }
 
     async function handleFileUpload(input) {
-        const file = input.files[0];
-        if (!file) return;
+        const file = input.files[0]; if (!file) return;
         showLoading(true);
         const reader = new FileReader();
         reader.onload = function(e) {
             const img = new Image();
             img.onload = async function() {
-                const canvas = document.createElement('canvas');
-                const maxWidth = 600;
+                const canvas = document.createElement('canvas'); const maxWidth = 600;
                 let width = img.width, height = img.height;
                 if (width > maxWidth) { height = (height * maxWidth) / width; width = maxWidth; }
                 canvas.width = width; canvas.height = height;
@@ -173,7 +187,7 @@
                 const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: "uploadImage", fileName: file.name, mimeType: "image/jpeg", base64Data: base64Data }) });
                 const imageUrl = await res.text();
                 document.getElementById('buyImg').value = imageUrl;
-                document.getElementById('imgPreview').innerHTML = `<img src="${imageUrl}" style="width:100px; margin:10px; border-radius:8px;">`;
+                document.getElementById('imgPreview').innerHTML = `<img src="${imageUrl}" style="width:100px; margin-top:10px; border-radius:8px;">`;
                 showLoading(false);
             };
             img.src = e.target.result;
@@ -184,19 +198,18 @@
     async function doSale() {
         const item = inventory.find(i => i[0] === document.getElementById('saleItem').value);
         const disc = userRole === "admin" ? document.getElementById('saleDiscount').value : 1;
+        const total = item[3] * document.getElementById('saleQty').value * disc;
         const payload = {
-            action: "sale", name: item[0], qty: document.getElementById('saleQty').value,
-            customer: document.getElementById('saleClient').value, payment: "現金",
-            total: item[2] * document.getElementById('saleQty').value * disc,
-            user: currentUser
+            action: "sale", id: item[0], name: item[1], qty: document.getElementById('saleQty').value,
+            customer: document.getElementById('saleClient').value, payment: document.getElementById('paymentMethod').value,
+            total: total, user: currentUser
         };
         await sendData(payload);
     }
 
     async function doBuy() {
-        if(userRole !== "admin") return alert("無權限");
         const payload = {
-            action: "buy", name: document.getElementById('buyName').value,
+            action: "buy", id: document.getElementById('buyId').value, name: document.getElementById('buyName').value,
             qty: document.getElementById('buyQty').value, price: document.getElementById('buyPrice').value,
             supplier: document.getElementById('buySupplier').value, img: document.getElementById('buyImg').value
         };
@@ -206,7 +219,7 @@
     async function addContact() {
         const payload = {
             action: "addContact", targetSheet: document.getElementById('contactType').value,
-            rowData: [document.getElementById('contactName').value, document.getElementById('contactPhone').value]
+            rowData: [document.getElementById('contactId').value, document.getElementById('contactName').value, document.getElementById('contactPhone').value]
         };
         await sendData(payload);
     }
@@ -214,7 +227,7 @@
     async function sendData(p) {
         showLoading(true);
         await fetch(API_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(p) });
-        alert("完成！");
+        alert("同步成功");
         setTimeout(syncAll, 1500);
     }
 
