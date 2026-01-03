@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>珠寶 ERP 欄位修正版</title>
+    <title>珠寶 ERP 圖片修正版</title>
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
     <style>
         :root { --primary: #007bff; --success: #28a745; --dark: #2c3e50; --bg: #f8f9fa; }
@@ -20,7 +20,7 @@
         .nav-item { flex: 1; text-align: center; display: flex; flex-direction: column; justify-content: center; font-size: 0.75rem; color: #888; }
         .nav-item.active { color: var(--primary); font-weight: bold; }
         #qr-canvas { width: 100%; border-radius: 8px; display: none; margin-bottom: 10px; background: #000; }
-        .preview-img { width: 100%; border-radius: 8px; margin: 10px 0; border: 1px solid #eee; max-height: 200px; object-fit: contain; }
+        .preview-img { width: 100%; border-radius: 8px; margin: 10px 0; border: 1px solid #eee; max-height: 300px; object-fit: contain; background: #fff; }
         .stock-img { width: 50px; height: 50px; object-fit: cover; border-radius: 4px; }
         .list-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid #eee; }
         #loading { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.7); display: none; justify-content: center; align-items: center; z-index: 999; }
@@ -29,7 +29,7 @@
 </head>
 <body id="mainBody">
 
-<div id="loading">⌛ 處理中...</div>
+<div id="loading">⌛ 數據同步中...</div>
 
 <div id="loginOverlay" style="position:fixed; top:0; left:0; width:100%; height:100%; background:white; z-index:1000; display:flex; flex-direction:column; justify-content:center; padding:30px; box-sizing:border-box;">
     <h2 style="text-align:center;">💎 珠寶系統登入</h2>
@@ -45,7 +45,7 @@
         <h3>💰 銷貨結帳</h3>
         <label>選擇商品 (ID)</label><select id="saleItem" onchange="updateSalePrice()"></select>
         <label>客戶</label><select id="saleClient"></select>
-        <label>實收金額</label><input type="number" id="saleFinalPrice">
+        <label>成交金額</label><input type="number" id="saleFinalPrice">
         <button class="btn" style="background:var(--primary)" onclick="doSale()">確認銷出</button>
     </div>
 </div>
@@ -55,16 +55,20 @@
         <h3>📥 商品進貨</h3>
         <button class="btn" style="background:#6f42c1;" onclick="startScan()">🔍 掃描鑑定書 QR Code</button>
         <canvas id="qr-canvas"></canvas>
-        <label>商品 ID</label><input type="text" id="buyId">
-        <label>商品名稱</label><input type="text" id="buyName">
+        
+        <label>商品 ID (檢測編號)</label><input type="text" id="buyId">
+        <label>商品名稱</label><input type="text" id="buyName" placeholder="手動輸入名稱">
         <label>供應商</label><select id="buySupplier"></select>
+        
         <div style="display:flex; gap:10px">
             <div style="flex:1"><label>成本</label><input type="number" id="buyCost"></div>
-            <div style="flex:1"><label>售價</label><input type="number" id="buyPrice"></div>
+            <div style="flex:1"><label>定價</label><input type="number" id="buyPrice"></div>
         </div>
+        
         <div id="imgPreview"></div>
         <input type="hidden" id="buyImg">
         <input type="hidden" id="buyCertUrl">
+        
         <button class="btn" style="background:var(--success)" onclick="doBuy()">完成入庫</button>
     </div>
 </div>
@@ -115,7 +119,7 @@
                 document.getElementById('loginOverlay').style.display = 'none';
                 syncAll();
             } else { alert("登入失敗"); }
-        } catch(e) { alert("連線失敗"); }
+        } catch(e) { alert("API 連線失敗"); }
         showLoading(false);
     }
 
@@ -129,7 +133,7 @@
             ]);
             inventory = stockRes; clients = clientRes; suppliers = suppRes;
             renderAll();
-        } catch(e) { console.error(e); }
+        } catch(e) { console.error("同步失敗"); }
         showLoading(false);
     }
 
@@ -142,8 +146,8 @@
         
         document.getElementById('stockList').innerHTML = inventory.map(i => `
             <div class="list-row" style="opacity: ${i[2] <= 0 ? 0.4 : 1}">
-                <img src="${i[6] || ''}" class="stock-img" onerror="this.src='https://via.placeholder.com/50?text=NO+IMG'">
-                <div style="flex:1"><b>${i[1]}</b> <small class="admin-only">($${i[3]})</small><br><span style="color:var(--success); font-weight:bold;">$${i[4]}</span></div>
+                <img src="${i[6] || ''}" class="stock-img" onerror="this.src='https://via.placeholder.com/50?text=無圖'">
+                <div style="flex:1"><b>${i[1]}</b> <small class="admin-only">($${i[3]})</small><br><span style="color:var(--success); font-weight:bold;">$${i[4]}</span> | ID: ${i[0]}</div>
                 <div>${i[7] ? `<a href="${i[7]}" target="_blank">📜</a>` : ''}</div>
                 <b>${i[2] > 0 ? '在庫' : '售出'}</b>
             </div>
@@ -170,7 +174,7 @@
             canvasElement.height = video.videoHeight;
             canvasElement.width = video.videoWidth;
             canvas.drawImage(video, 0, 0, canvasElement.width, canvasElement.height);
-            var imageData = canvas.getContext("2d").getImageData(0, 0, canvasElement.width, canvasElement.height);
+            var imageData = canvas.getImageData(0, 0, canvasElement.width, canvasElement.height);
             var code = jsQR(imageData.data, imageData.width, imageData.height);
             if (code) {
                 video.srcObject.getTracks().forEach(track => track.stop());
@@ -187,16 +191,26 @@
         try {
             const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: "scanCertificate", url: url }) });
             const result = await res.json();
-            document.getElementById('buyId').value = result.id;
-            document.getElementById('buyCertUrl').value = url;
-            document.getElementById('buyImg').value = result.img;
-            if (result.img) {
-                document.getElementById('imgPreview').innerHTML = `<img src="${result.img}" class="preview-img">`;
+            
+            if (result.id) {
+                document.getElementById('buyId').value = result.id;
+                document.getElementById('buyCertUrl').value = url;
+                document.getElementById('buyImg').value = result.img;
+                
+                if (result.img) {
+                    document.getElementById('imgPreview').innerHTML = `
+                        <p style="font-size:0.8rem; color:gray;">已自動抓取鑑定照片：</p>
+                        <img src="${result.img}" class="preview-img" onerror="this.style.display='none'; document.getElementById('imgError').innerText='圖片伺服器拒絕訪問，請手動拍照。'">
+                        <span id="imgError" style="color:red; font-size:0.8rem;"></span>
+                    `;
+                }
+                alert("掃描成功！");
             } else {
-                document.getElementById('imgPreview').innerHTML = "<p style='color:red;'>抓不到圖，請手動輸入 ID 並入庫</p>";
+                alert("解析成功，但未能抓取編號。請手動輸入。");
             }
-            alert("掃描完成");
-        } catch(e) { alert("解析失敗"); }
+        } catch(e) {
+            alert("系統繁忙，請稍後再試。");
+        }
         showLoading(false);
     }
 
@@ -225,7 +239,7 @@
     async function sendData(p) {
         showLoading(true);
         await fetch(API_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(p) });
-        alert("操作成功");
+        alert("操作完成！");
         syncAll();
     }
 
