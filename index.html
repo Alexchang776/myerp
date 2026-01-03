@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>珠寶 ERP 專業修正版</title>
+    <title>珠寶 ERP 旗艦版</title>
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
     <style>
         :root { --primary: #007bff; --success: #28a745; --danger: #dc3545; --dark: #2c3e50; --bg: #f8f9fa; }
@@ -25,7 +25,7 @@
         #scan-status { position: absolute; top: 10px; left: 0; width: 100%; text-align: center; color: white; text-shadow: 1px 1px 2px black; font-weight: bold; pointer-events: none; }
         
         .preview-img { width: 100%; border-radius: 8px; margin: 10px 0; border: 1px solid #eee; max-height: 250px; object-fit: contain; }
-        .stock-img { width: 50px; height: 50px; object-fit: cover; border-radius: 4px; }
+        .stock-img { width: 50px; height: 50px; object-fit: cover; border-radius: 4px; background: #eee; }
         .list-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid #eee; }
         .is-staff .admin-only { display: none !important; }
         #loading { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: none; flex-direction: column; justify-content: center; align-items: center; z-index: 999; color: white; }
@@ -69,7 +69,7 @@
             <button class="btn" style="background:#dc3545; margin-top:5px;" onclick="stopScan()">❌ 關閉相機</button>
         </div>
         
-        <label>商品 ID (檢測編號)</label><input type="text" id="buyId" style="background-color: #fff;" placeholder="掃描或手動輸入">
+        <label>商品 ID (檢測編號)</label><input type="text" id="buyId" style="background-color: #f8f9fa;" placeholder="掃描或手動輸入">
         <label>商品名稱</label><input type="text" id="buyName" placeholder="手動輸入名稱">
         <label>供應商</label><select id="buySupplier"></select>
         
@@ -163,7 +163,7 @@
         
         document.getElementById('stockList').innerHTML = inventory.map(i => `
             <div class="list-row" style="opacity: ${i[2] <= 0 ? 0.4 : 1}">
-                <img src="${i[6] || ''}" class="stock-img" onerror="this.src='https://via.placeholder.com/50?text=NoImg'">
+                <img src="${i[6]}" class="stock-img" onerror="this.src='https://via.placeholder.com/50?text=無圖'">
                 <div style="flex:1"><b>${i[1]}</b> <small class="admin-only">($${i[3]})</small><br><span style="color:var(--success); font-weight:bold;">$${i[4]}</span> | ID: ${i[0]}</div>
                 <div>${i[7] ? `<a href="${i[7]}" target="_blank">📜</a>` : ''}</div>
                 <b>${i[2] > 0 ? '在庫' : '售出'}</b>
@@ -219,7 +219,7 @@
     }
 
     async function handleCertScan(url) {
-        showLoading(true, "解析中...");
+        showLoading(true, "解析 QR Code...");
         document.getElementById('buyCertUrl').value = url;
         
         try {
@@ -234,11 +234,12 @@
 
             document.getElementById('buyId').value = finalId;
 
+            // 嘗試自動抓取圖片並上傳
             if (result.extImg) {
                showLoading(true, "轉存圖片...");
                await compressAndUpload(result.extImg, true); 
             } else {
-               document.getElementById('imgPreview').innerHTML = "<p style='color:red;'>無法抓圖，請手動拍照</p>";
+               document.getElementById('imgPreview').innerHTML = "<p style='color:red;'>無法自動抓圖，請手動拍照</p>";
                document.getElementById('buyImg').value = "";
             }
 
@@ -254,7 +255,7 @@
         showLoading(false);
     }
 
-    // --- 圖片壓縮上傳 ---
+    // --- 圖片壓縮與上傳核心 ---
     async function compressAndUpload(source, isUrl = false) {
         return new Promise((resolve) => {
             const img = new Image();
@@ -262,7 +263,7 @@
             img.onload = function() {
                 const canvas = document.createElement('canvas');
                 const ctx = canvas.getContext('2d');
-                const MAX_SIZE = 800; // 壓縮至 800px
+                const MAX_SIZE = 800;
                 let width = img.width;
                 let height = img.height;
                 
@@ -284,7 +285,7 @@
                 });
             };
             img.onerror = function() {
-                document.getElementById('imgPreview').innerHTML = "<p style='color:red;'>圖片讀取失敗，請手動拍照</p>";
+                document.getElementById('imgPreview').innerHTML = "<p style='color:red;'>無法載入圖片 (防盜連)，請手動拍照</p>";
                 resolve(null);
             };
             img.src = source;
@@ -310,7 +311,6 @@
         } catch(e) { return ""; }
     }
 
-    // --- 進貨：攔截重複 ID ---
     async function doBuy() {
         const id = document.getElementById('buyId').value;
         if(!id) { alert("請輸入商品 ID"); return; }
@@ -330,13 +330,11 @@
         const res = await fetch(API_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
         const text = await res.text();
         
-        // 檢查後端回傳是否為 "DUPLICATE"
         if (text && text.includes("DUPLICATE")) {
-            alert("❌ 錯誤：商品 ID 已存在，無法重複入庫！");
+            alert("❌ 錯誤：此 ID 已存在！");
         } else {
-            // no-cors 模式下無法直接讀取 text，我們假設成功，若失敗則靠庫存同步檢查
-            alert("操作完成！(若無新增代表 ID 重複)");
-            // 清空欄位
+            alert("操作完成！(若重複則不會入庫)");
+            // 成功才清空
             document.getElementById('buyId').value = "";
             document.getElementById('buyName').value = "";
             document.getElementById('buyImg').value = "";
