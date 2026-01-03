@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>翡翠珠寶 ERP 旗艦版</title>
+    <title>珠寶 ERP 精確掃描版</title>
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
     <style>
         :root { --primary: #007bff; --success: #28a745; --dark: #2c3e50; --bg: #f8f9fa; }
@@ -13,58 +13,63 @@
         .page.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         .card { background: white; border-radius: 12px; padding: 15px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        h3 { margin-top: 0; border-left: 4px solid var(--primary); padding-left: 10px; margin-bottom: 15px; }
-        label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 0.85rem; }
+        h3 { margin-top: 0; border-left: 4px solid var(--primary); padding-left: 10px; margin-bottom: 10px; font-size: 1.1rem; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 0.85rem; color: #555; }
         input, select { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
         .btn { width: 100%; padding: 12px; border-radius: 6px; border: none; font-weight: bold; color: white; cursor: pointer; margin-bottom: 10px; }
-        .nav-bar { position: fixed; bottom: 0; width: 100%; background: white; display: flex; border-top: 1px solid #ddd; height: 60px; }
+        .nav-bar { position: fixed; bottom: 0; width: 100%; background: white; display: flex; border-top: 1px solid #ddd; height: 65px; z-index: 100; }
         .nav-item { flex: 1; text-align: center; display: flex; flex-direction: column; justify-content: center; font-size: 0.75rem; color: #888; }
         .nav-item.active { color: var(--primary); font-weight: bold; }
         #qr-canvas { width: 100%; border-radius: 8px; display: none; margin-bottom: 10px; }
-        .preview-img { width: 100%; border-radius: 8px; margin-top: 10px; }
+        .preview-img { width: 100%; border-radius: 8px; margin: 10px 0; border: 1px solid #eee; }
         .stock-img { width: 50px; height: 50px; object-fit: cover; border-radius: 4px; }
         .list-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid #eee; }
-        .is-staff .admin-only { display: none !important; }
         #loading { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.7); display: none; justify-content: center; align-items: center; z-index: 999; }
+        .is-staff .admin-only { display: none !important; }
     </style>
 </head>
 <body id="mainBody">
 
-<div id="loading">⌛ 請稍後...</div>
+<div id="loading">⌛ 請稍候...</div>
 
 <div id="loginOverlay" style="position:fixed; top:0; left:0; width:100%; height:100%; background:white; z-index:1000; display:flex; flex-direction:column; justify-content:center; padding:30px; box-sizing:border-box;">
-    <h2 style="text-align:center;">💎 珠寶 ERP 系統</h2>
+    <h2 style="text-align:center;">💎 珠寶系統登入</h2>
     <input type="text" id="acc" placeholder="帳號">
     <input type="password" id="pwd" placeholder="密碼">
     <button class="btn" style="background:var(--dark)" onclick="checkLogin()">登入</button>
 </div>
 
-<div class="header"><strong id="headerTitle">雲端管理系統</strong></div>
+<div class="header"><strong>珠寶雲端管理</strong></div>
 
 <div id="page-sale" class="page active">
     <div class="card">
         <h3>💰 銷貨結帳</h3>
-        <label>選擇在庫商品</label><select id="saleItem" onchange="updateSalePrice()"></select>
-        <label>客戶名單</label><select id="saleClient"></select>
+        <label>選擇商品 (ID)</label><select id="saleItem" onchange="updateSalePrice()"></select>
+        <label>客戶</label><select id="saleClient"></select>
         <label>成交金額</label><input type="number" id="saleFinalPrice">
-        <button class="btn" style="background:var(--primary)" onclick="doSale()">確認銷售</button>
+        <button class="btn" style="background:var(--primary)" onclick="doSale()">確認銷出</button>
     </div>
 </div>
 
 <div id="page-buy" class="page">
     <div class="card">
         <h3>📥 商品進貨</h3>
-        <button class="btn" style="background:#6f42c1;" onclick="startScan()">🔍 掃描證書 QR Code</button>
+        <button class="btn" style="background:#6f42c1;" onclick="startScan()">🔍 掃描鑑定書 QR Code</button>
         <canvas id="qr-canvas"></canvas>
-        <label>產品 ID (證書編號)</label><input type="text" id="buyId">
-        <label>商品名稱</label><input type="text" id="buyName">
-        <label>廠商</label><select id="buySupplier"></select>
+        
+        <label>商品 ID (檢測編號)</label><input type="text" id="buyId">
+        <label>商品名稱 (手動輸入)</label><input type="text" id="buyName" placeholder="例如：翡翠掛件">
+        <label>供應商</label><select id="buySupplier"></select>
+        
         <div style="display:flex; gap:10px">
             <div style="flex:1"><label>成本</label><input type="number" id="buyCost"></div>
-            <div style="flex:1"><label>售價</label><input type="number" id="buyPrice"></div>
+            <div style="flex:1"><label>定價</label><input type="number" id="buyPrice"></div>
         </div>
+        
         <div id="imgPreview"></div>
         <input type="hidden" id="buyImg">
+        <input type="hidden" id="buyCertUrl">
+        
         <button class="btn" style="background:var(--success)" onclick="doBuy()">完成入庫</button>
     </div>
 </div>
@@ -78,12 +83,12 @@
 
 <div id="page-contacts" class="page">
     <div class="card">
-        <h3>👥 名單管理</h3>
-        <label>類型</label><select id="contactType"><option value="Clients">客戶</option><option value="Suppliers">廠商</option></select>
-        <label>名稱</label><input type="text" id="contactName">
-        <label>電話</label><input type="text" id="contactPhone">
-        <label>備註</label><input type="text" id="contactNote">
-        <button class="btn" style="background:var(--dark)" onclick="addContact()">新增至名單</button>
+        <h3>👥 客戶/廠商管理</h3>
+        <select id="contactType"><option value="Clients">客戶</option><option value="Suppliers">廠商</option></select>
+        <input type="text" id="contactName" placeholder="名稱">
+        <input type="text" id="contactPhone" placeholder="電話">
+        <input type="text" id="contactNote" placeholder="備註">
+        <button class="btn" style="background:var(--dark)" onclick="addContact()">新增名單</button>
     </div>
 </div>
 
@@ -95,7 +100,7 @@
 </div>
 
 <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbymN7tFDVzZhi7HUanHBh9YKP07lgV1M4LrgNT7E5igPQU39KuGIIsxW-BWw4CMBPhcjA/exec"; // <--- 請務必填寫此處
+    const API_URL = "https://script.google.com/macros/s/AKfycbymN7tFDVzZhi7HUanHBh9YKP07lgV1M4LrgNT7E5igPQU39KuGIIsxW-BWw4CMBPhcjA/exec"; 
     let inventory = [], clients = [], suppliers = [], currentUser = "", userRole = "";
     let video = document.createElement("video");
     let canvasElement = document.getElementById("qr-canvas");
@@ -113,8 +118,8 @@
                 if(userRole === "staff") document.getElementById('mainBody').classList.add('is-staff');
                 document.getElementById('loginOverlay').style.display = 'none';
                 syncAll();
-            } else { alert("帳密有誤"); }
-        } catch(e) { alert("連線失敗，請檢查 API 網址"); }
+            } else { alert("登入失敗"); }
+        } catch(e) { alert("API 連線失敗"); }
         showLoading(false);
     }
 
@@ -133,17 +138,17 @@
     }
 
     function renderAll() {
-        // 更新銷貨與進貨下拉選單
         const activeItems = inventory.filter(i => i[2] > 0);
-        document.getElementById('saleItem').innerHTML = activeItems.map(i => `<option value="${i[0]}">${i[1]}</option>`).join('');
+        document.getElementById('saleItem').innerHTML = activeItems.map(i => `<option value="${i[0]}">${i[1]} (${i[0]})</option>`).join('');
         document.getElementById('saleClient').innerHTML = clients.map(c => `<option value="${c[1]}">${c[1]}</option>`).join('');
         document.getElementById('buySupplier').innerHTML = suppliers.map(s => `<option value="${s[1]}">${s[1]}</option>`).join('');
         updateSalePrice();
-        // 更新庫存列表
+        
         document.getElementById('stockList').innerHTML = inventory.map(i => `
-            <div class="list-row" style="opacity: ${i[2] <= 0 ? 0.3 : 1}">
+            <div class="list-row" style="opacity: ${i[2] <= 0 ? 0.4 : 1}">
                 <img src="${i[6] || ''}" class="stock-img">
                 <div style="flex:1"><b>${i[1]}</b> <small class="admin-only">($${i[3]})</small><br><span style="color:var(--success); font-weight:bold;">$${i[4]}</span> | ID: ${i[0]}</div>
+                <div>${i[10] ? `<a href="${i[10]}" target="_blank">📜</a>` : ''}</div>
                 <b>${i[2] > 0 ? '在庫' : '售出'}</b>
             </div>
         `).join('');
@@ -185,18 +190,31 @@
         showLoading(true);
         const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: "scanCertificate", url: url }) });
         const result = await res.json();
+        
         if (result.id) {
-            document.getElementById('buyId').value = result.id;
-            document.getElementById('buyName').value = result.name;
-            document.getElementById('buyImg').value = result.img;
-            document.getElementById('imgPreview').innerHTML = result.img ? `<img src="${result.img}" class="preview-img">` : "";
-            alert("掃描成功");
+            document.getElementById('buyId').value = result.id; // 正確填入商品 ID
+            document.getElementById('buyCertUrl').value = result.rawUrl; // 儲存證書網址
+            document.getElementById('buyImg').value = result.img; // 儲存圖片網址
+            document.getElementById('imgPreview').innerHTML = `<img src="${result.img}" class="preview-img">`;
+            alert("掃描成功！ID 與照片已自動載入，請手動填寫名稱與價格。");
+        } else {
+            alert("讀取成功，但無法從網頁抓取 ID。請手動輸入 ID 並貼上網址。");
+            document.getElementById('buyCertUrl').value = url;
         }
         showLoading(false);
     }
 
     async function doBuy() {
-        await sendData({ action: "buy", id: document.getElementById('buyId').value, name: document.getElementById('buyName').value, cost: document.getElementById('buyCost').value, price: document.getElementById('buyPrice').value, supplier: document.getElementById('buySupplier').value, img: document.getElementById('buyImg').value });
+        await sendData({ 
+            action: "buy", 
+            id: document.getElementById('buyId').value, 
+            name: document.getElementById('buyName').value, 
+            cost: document.getElementById('buyCost').value, 
+            price: document.getElementById('buyPrice').value, 
+            supplier: document.getElementById('buySupplier').value, 
+            img: document.getElementById('buyImg').value,
+            certUrl: document.getElementById('buyCertUrl').value 
+        });
     }
 
     async function doSale() {
@@ -211,7 +229,7 @@
     async function sendData(p) {
         showLoading(true);
         await fetch(API_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(p) });
-        alert("完成");
+        alert("操作完成！");
         syncAll();
     }
 
