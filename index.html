@@ -3,145 +3,347 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>珠寶 ERP 旗艦版</title>
+    <title>珠寶 ERP (長輩友善版)</title>
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
     <style>
-        :root { --primary: #007bff; --success: #28a745; --danger: #dc3545; --dark: #2c3e50; --bg: #f8f9fa; }
-        body { font-family: -apple-system, sans-serif; margin: 0; background: var(--bg); padding-bottom: 80px; }
-        .header { background: var(--dark); color: white; padding: 20px 15px; text-align: center; position: sticky; top: 0; z-index: 100; }
-        .page { display: none; padding: 15px; animation: fadeIn 0.3s; }
+        /* --- 基礎設定：大字體、高對比 --- */
+        :root { 
+            --primary: #2563eb; /* 科技藍 */
+            --primary-gradient: linear-gradient(135deg, #2563eb, #1d4ed8);
+            --success: #059669; /* 護眼綠 */
+            --danger: #dc2626; 
+            --dark: #1e293b; 
+            --bg: #f1f5f9; /* 淺灰背景護眼 */
+            --card-bg: #ffffff;
+        }
+        
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; 
+            margin: 0; 
+            background: var(--bg); 
+            padding-bottom: 100px; /* 避開下方導航 */
+            font-size: 18px; /* 基礎字體加大 */
+            color: #333;
+        }
+
+        /* --- 標題列 --- */
+        .header { 
+            background: var(--dark); 
+            color: white; 
+            padding: 25px 20px; 
+            text-align: center; 
+            font-size: 1.4rem; 
+            font-weight: bold;
+            letter-spacing: 1px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            position: sticky; 
+            top: 0; 
+            z-index: 100;
+        }
+
+        /* --- 分頁切換效果 --- */
+        .page { display: none; padding: 20px; animation: fadeIn 0.4s; }
         .page.active { display: block; }
-        .card { background: white; border-radius: 12px; padding: 15px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        h3 { margin-top: 0; border-left: 4px solid var(--primary); padding-left: 10px; margin-bottom: 10px; font-size: 1.1rem; }
-        label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 0.85rem; color: #555; }
-        input, select { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
-        .btn { width: 100%; padding: 12px; border-radius: 6px; border: none; font-weight: bold; color: white; cursor: pointer; margin-bottom: 10px; }
-        .nav-bar { position: fixed; bottom: 0; width: 100%; background: white; display: flex; border-top: 1px solid #ddd; height: 65px; z-index: 100; }
-        .nav-item { flex: 1; text-align: center; display: flex; flex-direction: column; justify-content: center; font-size: 0.75rem; color: #888; }
-        .nav-item.active { color: var(--primary); font-weight: bold; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* --- 卡片式設計 --- */
+        .card { 
+            background: var(--card-bg); 
+            border-radius: 20px; /* 圓角更柔和 */
+            padding: 25px; 
+            margin-bottom: 20px; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08); 
+            border: 1px solid #e2e8f0;
+        }
+
+        h3 { 
+            margin-top: 0; 
+            color: var(--primary); 
+            font-size: 1.3rem; 
+            border-bottom: 2px solid #e2e8f0; 
+            padding-bottom: 10px; 
+            margin-bottom: 20px;
+        }
+
+        /* --- 輸入框與標籤優化 --- */
+        label { 
+            display: block; 
+            margin-bottom: 8px; 
+            font-weight: bold; 
+            font-size: 1.1rem; /* 標籤字體加大 */
+            color: #475569; 
+        }
         
-        #scan-container { position: relative; display: none; margin-bottom: 15px; }
-        #qr-canvas { width: 100%; border-radius: 8px; background: #000; }
-        #scan-status { position: absolute; top: 10px; left: 0; width: 100%; text-align: center; color: white; text-shadow: 1px 1px 2px black; font-weight: bold; pointer-events: none; }
+        input, select { 
+            width: 100%; 
+            padding: 15px; /* 增加點擊區域 */
+            margin-bottom: 20px; 
+            border: 2px solid #cbd5e1; 
+            border-radius: 12px; 
+            font-size: 1.1rem; /* 輸入字體加大 */
+            background-color: #fff;
+            box-sizing: border-box;
+            transition: border-color 0.3s;
+        }
         
-        .preview-img { width: 100%; border-radius: 8px; margin: 10px 0; border: 1px solid #eee; max-height: 250px; object-fit: contain; }
-        .stock-img { width: 50px; height: 50px; object-fit: cover; border-radius: 4px; background: #eee; }
-        .list-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid #eee; }
-        .is-staff .admin-only { display: none !important; }
-        #loading { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: none; flex-direction: column; justify-content: center; align-items: center; z-index: 999; color: white; }
+        input:focus, select:focus {
+            border-color: var(--primary);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+        }
+
+        /* --- 按鈕優化 (大按鈕、漸層) --- */
+        .btn { 
+            width: 100%; 
+            padding: 18px; /* 加高按鈕 */
+            border-radius: 15px; 
+            border: none; 
+            font-weight: bold; 
+            font-size: 1.2rem; /* 按鈕字體加大 */
+            color: white; 
+            cursor: pointer; 
+            margin-bottom: 15px; 
+            transition: transform 0.1s;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .btn:active { transform: scale(0.98); }
+        .btn-primary { background: var(--primary-gradient); }
+        .btn-success { background: linear-gradient(135deg, #059669, #10b981); }
+        .btn-camera { background: linear-gradient(135deg, #6366f1, #8b5cf6); }
+        .btn-danger { background: var(--danger); }
+        .btn-dark { background: #475569; }
+
+        /* --- 下方導航列 --- */
+        .nav-bar { 
+            position: fixed; 
+            bottom: 0; 
+            width: 100%; 
+            background: white; 
+            display: flex; 
+            border-top: 1px solid #e2e8f0; 
+            height: 85px; /* 加高導航列 */
+            z-index: 100; 
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+        }
+        
+        .nav-item { 
+            flex: 1; 
+            text-align: center; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: center; 
+            font-size: 1rem; 
+            color: #94a3b8; 
+            cursor: pointer;
+        }
+        
+        .nav-item.active { 
+            color: var(--primary); 
+            font-weight: bold; 
+            background-color: #eff6ff;
+        }
+        
+        .nav-icon { font-size: 1.8rem; margin-bottom: 4px; } /* 圖示加大 */
+
+        /* --- 掃描與圖片 --- */
+        #scan-container { position: relative; display: none; margin-bottom: 20px; border: 4px solid var(--primary); border-radius: 12px; overflow: hidden; }
+        #qr-canvas { width: 100%; background: #000; }
+        #scan-status { position: absolute; top: 15px; left: 0; width: 100%; text-align: center; color: white; font-size: 1.2rem; font-weight: bold; text-shadow: 1px 1px 4px black; }
+        
+        .preview-img { width: 100%; border-radius: 12px; margin: 15px 0; border: 2px solid #e2e8f0; max-height: 350px; object-fit: contain; background: white; }
+        
+        /* --- 列表樣式 --- */
+        .list-row { 
+            display: flex; 
+            align-items: center; 
+            gap: 15px; 
+            padding: 15px 0; 
+            border-bottom: 1px solid #f1f5f9; 
+        }
+        .stock-img { 
+            width: 70px; height: 70px; /* 列表圖片加大 */
+            object-fit: cover; 
+            border-radius: 10px; 
+            background: #eee; 
+            border: 1px solid #ddd;
+        }
+        
+        /* --- 載入遮罩 --- */
+        #loading { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(0,0,0,0.7); 
+            display: none; 
+            flex-direction: column; 
+            justify-content: center; 
+            align-items: center; 
+            z-index: 2000; 
+            color: white; 
+            font-size: 1.5rem;
+        }
+        
+        /* --- 登入畫面 --- */
+        #loginOverlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #f8fafc;
+            z-index: 1500;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 30px;
+            box-sizing: border-box;
+        }
     </style>
 </head>
 <body id="mainBody">
 
 <div id="loading">
-    <div style="font-size: 2rem;">⏳</div>
-    <div id="loadingText">處理中...</div>
+    <div style="font-size: 4rem;">⏳</div>
+    <div id="loadingText" style="margin-top:20px;">處理中...</div>
 </div>
 
-<div id="loginOverlay" style="position:fixed; top:0; left:0; width:100%; height:100%; background:white; z-index:1000; display:flex; flex-direction:column; justify-content:center; padding:30px; box-sizing:border-box;">
-    <h2 style="text-align:center;">💎 珠寶系統登入</h2>
-    <input type="text" id="acc" placeholder="帳號">
-    <input type="password" id="pwd" placeholder="密碼">
-    <button class="btn" style="background:var(--dark)" onclick="checkLogin()">登入</button>
+<div id="loginOverlay">
+    <h2 style="text-align:center; color: var(--dark); font-size: 2rem; margin-bottom: 40px;">💎 珠寶管理系統</h2>
+    <label>帳號</label>
+    <input type="text" id="acc" placeholder="請輸入帳號">
+    <label>密碼</label>
+    <input type="password" id="pwd" placeholder="請輸入密碼">
+    <button class="btn btn-dark" onclick="checkLogin()">登入系統</button>
 </div>
 
-<div class="header"><strong>珠寶雲端管理</strong></div>
+<div class="header">珠寶雲端 ERP</div>
 
 <div id="page-sale" class="page active">
     <div class="card">
-        <h3>💰 銷貨結帳</h3>
-        <label>選擇商品 (ID)</label><select id="saleItem" onchange="updateSalePrice()"></select>
-        <label>客戶</label><select id="saleClient"></select>
-        <label>成交金額</label><input type="number" id="saleFinalPrice">
-        <button class="btn" style="background:var(--primary)" onclick="doSale()">確認銷出</button>
+        <h3>💰 銷貨結帳 (賣東西)</h3>
+        <label>1. 選擇商品</label>
+        <select id="saleItem" onchange="updateSalePrice()"></select>
+        
+        <label>2. 選擇客戶</label>
+        <select id="saleClient"></select>
+        
+        <label>3. 確認金額</label>
+        <input type="number" id="saleFinalPrice" style="font-size: 1.5rem; font-weight: bold; color: var(--success);">
+        
+        <button class="btn btn-primary" onclick="doSale()">✅ 確認售出</button>
     </div>
 </div>
 
 <div id="page-buy" class="page">
     <div class="card">
-        <h3>📥 商品進貨</h3>
+        <h3>📥 商品進貨 (買東西)</h3>
         
-        <button class="btn" style="background:#6f42c1;" onclick="startScan()">🔍 開啟相機掃描</button>
+        <button class="btn btn-camera" onclick="startScan()">📷 開啟相機掃描 QR Code</button>
         
         <div id="scan-container">
             <canvas id="qr-canvas"></canvas>
-            <div id="scan-status">📷 啟動中...</div>
-            <button class="btn" style="background:#dc3545; margin-top:5px;" onclick="stopScan()">❌ 關閉相機</button>
+            <div id="scan-status">準備中...</div>
+            <button class="btn btn-danger" style="border-radius:0;" onclick="stopScan()">❌ 關閉相機</button>
         </div>
         
-        <label>商品 ID (檢測編號)</label><input type="text" id="buyId" style="background-color: #f8f9fa;" placeholder="掃描或手動輸入">
-        <label>商品名稱</label><input type="text" id="buyName" placeholder="手動輸入名稱">
-        <label>供應商</label><select id="buySupplier"></select>
+        <label>商品編號 (ID)</label>
+        <input type="text" id="buyId" placeholder="掃描後自動填入" style="background-color: #f1f5f9;">
         
-        <div style="display:flex; gap:10px">
-            <div style="flex:1"><label>成本</label><input type="number" id="buyCost"></div>
-            <div style="flex:1"><label>售價</label><input type="number" id="buyPrice"></div>
+        <label>商品名稱</label>
+        <input type="text" id="buyName" placeholder="例如：翡翠手鐲">
+        
+        <label>供應商 (誰賣的)</label>
+        <select id="buySupplier"></select>
+        
+        <div style="display:flex; gap:15px">
+            <div style="flex:1"><label>進貨成本</label><input type="number" id="buyCost"></div>
+            <div style="flex:1"><label>預定售價</label><input type="number" id="buyPrice"></div>
         </div>
         
-        <label>商品圖片 (自動壓縮儲存)</label>
-        <div id="imgPreview" style="text-align: center; color: #888; margin-bottom: 10px;">(尚未有圖片)</div>
-        <button class="btn" style="background:#6c757d;" onclick="document.getElementById('cameraInput').click()">📷 手動拍照/上傳</button>
+        <label>商品照片 (會自動壓縮)</label>
+        <div id="imgPreview" style="text-align: center; padding: 20px; border: 2px dashed #cbd5e1; border-radius: 12px; margin-bottom: 20px; color: #94a3b8;">
+            (尚未有圖片)
+        </div>
+        
+        <button class="btn btn-dark" onclick="document.getElementById('cameraInput').click()">📸 手動拍照 / 上傳</button>
         <input type="file" id="cameraInput" accept="image/*" style="display:none;" onchange="handleFileUpload(this)">
         
-        <input type="hidden" id="buyImg"> <input type="hidden" id="buyCertUrl">
+        <input type="hidden" id="buyImg">
+        <input type="hidden" id="buyCertUrl">
         
-        <button class="btn" style="background:var(--success)" onclick="doBuy()">完成入庫</button>
+        <div style="height: 20px;"></div>
+        <button class="btn btn-success" onclick="doBuy()">💾 確認入庫存</button>
     </div>
 </div>
 
 <div id="page-stock" class="page">
     <div class="card">
-        <h3>📦 在庫清單</h3>
+        <h3>📦 庫存清單 (倉庫)</h3>
         <div id="stockList"></div>
     </div>
 </div>
 
 <div id="page-contacts" class="page">
     <div class="card">
-        <h3>👥 名單管理</h3>
-        <select id="contactType"><option value="Clients">客戶</option><option value="Suppliers">廠商</option></select>
-        <input type="text" id="contactId" placeholder="編號">
-        <input type="text" id="contactName" placeholder="名稱">
-        <input type="text" id="contactPhone" placeholder="電話">
-        <input type="text" id="contactNote" placeholder="備註">
-        <button class="btn" style="background:var(--dark)" onclick="addContact()">新增名單</button>
+        <h3>👥 新增名單</h3>
+        <label>類型</label>
+        <select id="contactType">
+            <option value="Clients">客戶 (買家)</option>
+            <option value="Suppliers">供應商 (賣家)</option>
+        </select>
+        
+        <label>編號</label><input type="text" id="contactId">
+        <label>名稱</label><input type="text" id="contactName">
+        <label>電話</label><input type="text" id="contactPhone">
+        <label>備註</label><input type="text" id="contactNote">
+        
+        <button class="btn btn-dark" onclick="addContact()">➕ 新增資料</button>
     </div>
 </div>
 
 <div class="nav-bar">
-    <div class="nav-item active" onclick="showPage('sale', this)">💰銷貨</div>
-    <div class="nav-item admin-only" id="nav-buy" onclick="showPage('buy', this)">📥進貨</div>
-    <div class="nav-item" onclick="showPage('stock', this)">📦庫存</div>
-    <div class="nav-item" onclick="showPage('contacts', this)">👥名單</div>
+    <div class="nav-item active" onclick="showPage('sale', this)">
+        <span class="nav-icon">💰</span>
+        <span>銷貨</span>
+    </div>
+    <div class="nav-item" onclick="showPage('buy', this)">
+        <span class="nav-icon">📥</span>
+        <span>進貨</span>
+    </div>
+    <div class="nav-item" onclick="showPage('stock', this)">
+        <span class="nav-icon">📦</span>
+        <span>庫存</span>
+    </div>
+    <div class="nav-item" onclick="showPage('contacts', this)">
+        <span class="nav-icon">👥</span>
+        <span>名單</span>
+    </div>
 </div>
 
 <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbymN7tFDVzZhi7HUanHBh9YKP07lgV1M4LrgNT7E5igPQU39KuGIIsxW-BWw4CMBPhcjA/exec"; 
-    let inventory = [], clients = [], suppliers = [], currentUser = "", userRole = "";
+    const API_URL = "https://script.google.com/macros/s/AKfycbymN7tFDVzZhi7HUanHBh9YKP07lgV1M4LrgNT7E5igPQU39KuGIIsxW-BWw4CMBPhcjA/exec"; // <--- 請記得換這裡
+    let inventory = [], clients = [], suppliers = [], currentUser = "";
     let video = document.createElement("video");
     let canvasElement = document.getElementById("qr-canvas");
     let canvas = canvasElement.getContext("2d");
     let scanning = false;
 
+    // --- 登入與同步 ---
     async function checkLogin() {
         const acc = document.getElementById('acc').value;
         const pwd = document.getElementById('pwd').value;
-        showLoading(true, "登入中...");
+        if(!acc || !pwd) { alert("請輸入帳號密碼"); return; }
+        
+        showLoading(true, "登入系統中...");
         try {
             const r = await fetch(`${API_URL}?type=login&acc=${acc}&pwd=${pwd}`);
             const res = await r.json();
             if(res.status === "success") {
-                currentUser = res.name; userRole = res.role;
-                if(userRole === "staff") document.getElementById('mainBody').classList.add('is-staff');
+                currentUser = res.name;
                 document.getElementById('loginOverlay').style.display = 'none';
                 syncAll();
-            } else { alert("帳密錯誤"); }
-        } catch(e) { alert("連線失敗"); }
+            } else { alert("❌ 帳號或密碼錯誤"); }
+        } catch(e) { alert("無法連線，請檢查網路"); }
         showLoading(false);
     }
 
     async function syncAll() {
-        showLoading(true, "同步資料...");
+        showLoading(true, "更新資料中...");
         try {
             const [stockRes, clientRes, suppRes] = await Promise.all([
                 fetch(`${API_URL}?sheet=Stock`).then(r => r.json()),
@@ -155,32 +357,51 @@
     }
 
     function renderAll() {
+        // 渲染下拉選單與列表 (過濾庫存>0)
         const activeItems = inventory.filter(i => i[2] > 0);
-        document.getElementById('saleItem').innerHTML = activeItems.map(i => `<option value="${i[0]}">${i[1]} (${i[0]})</option>`).join('');
-        document.getElementById('saleClient').innerHTML = clients.map(c => `<option value="${c[1]}">${c[1]}</option>`).join('');
-        document.getElementById('buySupplier').innerHTML = suppliers.map(s => `<option value="${s[1]}">${s[1]}</option>`).join('');
-        updateSalePrice();
         
+        let saleOptions = '<option value="">請選擇商品...</option>';
+        activeItems.forEach(i => {
+            saleOptions += `<option value="${i[0]}">${i[1]} ($${i[4]})</option>`;
+        });
+        document.getElementById('saleItem').innerHTML = saleOptions;
+
+        let clientOptions = '<option value="">請選擇客戶...</option>';
+        clients.forEach(c => { clientOptions += `<option value="${c[1]}">${c[1]}</option>`; });
+        document.getElementById('saleClient').innerHTML = clientOptions;
+
+        let suppOptions = '<option value="">請選擇供應商...</option>';
+        suppliers.forEach(s => { suppOptions += `<option value="${s[1]}">${s[1]}</option>`; });
+        document.getElementById('buySupplier').innerHTML = suppOptions;
+
         document.getElementById('stockList').innerHTML = inventory.map(i => `
-            <div class="list-row" style="opacity: ${i[2] <= 0 ? 0.4 : 1}">
-                <img src="${i[6]}" class="stock-img" onerror="this.src='https://via.placeholder.com/50?text=無圖'">
-                <div style="flex:1"><b>${i[1]}</b> <small class="admin-only">($${i[3]})</small><br><span style="color:var(--success); font-weight:bold;">$${i[4]}</span> | ID: ${i[0]}</div>
-                <div>${i[7] ? `<a href="${i[7]}" target="_blank">📜</a>` : ''}</div>
-                <b>${i[2] > 0 ? '在庫' : '售出'}</b>
+            <div class="list-row" style="opacity: ${i[2] <= 0 ? 0.5 : 1}">
+                <img src="${i[6] || ''}" class="stock-img" onerror="this.src='https://via.placeholder.com/100?text=無圖'">
+                <div style="flex:1">
+                    <div style="font-weight:bold; font-size:1.2rem; color:var(--dark)">${i[1]}</div>
+                    <div style="color:#64748b; margin-top:5px;">ID: ${i[0]}</div>
+                    <div style="color:var(--success); font-weight:bold; font-size:1.1rem; margin-top:5px;">$${i[4]}</div>
+                </div>
+                <div>${i[7] ? `<a href="${i[7]}" target="_blank" style="font-size:2rem; text-decoration:none;">📜</a>` : ''}</div>
+                <div style="font-weight:bold; margin-left:10px;">${i[2] > 0 ? '在庫' : '售出'}</div>
             </div>
         `).join('');
+        
+        updateSalePrice();
     }
 
     function updateSalePrice() {
-        const item = inventory.find(i => i[0] == document.getElementById('saleItem').value);
+        const id = document.getElementById('saleItem').value;
+        const item = inventory.find(i => i[0] == id);
         if(item) document.getElementById('saleFinalPrice').value = item[4];
+        else document.getElementById('saleFinalPrice').value = "";
     }
 
-    // --- 掃描功能 ---
+    // --- 掃描功能 (紅框版) ---
     function startScan() {
         scanning = true;
         document.getElementById("scan-container").style.display = "block";
-        document.getElementById("scan-status").innerText = "📷 正在開啟相機...";
+        document.getElementById("scan-status").innerText = "📷 相機啟動中...";
         
         navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } }).then(function(stream) {
             video.srcObject = stream;
@@ -188,7 +409,7 @@
             video.play();
             requestAnimationFrame(tick);
         }).catch(function(err){
-            alert("無法開啟相機");
+            alert("❌ 無法開啟相機，請允許瀏覽器使用相機權限");
             stopScan();
         });
     }
@@ -202,24 +423,44 @@
     function tick() {
         if (!scanning) return;
         if (video.readyState === video.HAVE_ENOUGH_DATA) {
-            document.getElementById("scan-status").innerText = "🔍 搜尋 QR Code 中...";
+            document.getElementById("scan-status").innerText = "🔍 請對準 QR Code";
             canvasElement.height = video.videoHeight;
             canvasElement.width = video.videoWidth;
             canvas.drawImage(video, 0, 0, canvasElement.width, canvasElement.height);
+            
             var imageData = canvas.getImageData(0, 0, canvasElement.width, canvasElement.height);
             var code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: "dontInvert" });
 
             if (code && code.data) {
-                stopScan();
-                handleCertScan(code.data);
+                // 畫紅框
+                drawLine(code.location.topLeftCorner, code.location.topRightCorner, "#FF0000");
+                drawLine(code.location.topRightCorner, code.location.bottomRightCorner, "#FF0000");
+                drawLine(code.location.bottomRightCorner, code.location.bottomLeftCorner, "#FF0000");
+                drawLine(code.location.bottomLeftCorner, code.location.topLeftCorner, "#FF0000");
+                
+                // 稍微延遲一下讓使用者看到框
+                setTimeout(() => {
+                    stopScan();
+                    handleCertScan(code.data);
+                }, 300);
                 return;
             }
         }
         requestAnimationFrame(tick);
     }
 
+    function drawLine(begin, end, color) {
+        canvas.beginPath();
+        canvas.moveTo(begin.x, begin.y);
+        canvas.lineTo(end.x, end.y);
+        canvas.lineWidth = 5;
+        canvas.strokeStyle = color;
+        canvas.stroke();
+    }
+
+    // --- 掃描後處理 ---
     async function handleCertScan(url) {
-        showLoading(true, "解析 QR Code...");
+        showLoading(true, "正在解析證書...");
         document.getElementById('buyCertUrl').value = url;
         
         try {
@@ -228,34 +469,35 @@
             
             let finalId = result.id;
             if(!finalId) {
+                // 補救：從網址抓 ID
                 let match = url.match(/ZSJ\d+/i);
                 if(match) finalId = match[0];
             }
 
             document.getElementById('buyId').value = finalId;
 
-            // 嘗試自動抓取圖片並上傳
+            // 處理圖片 (自動轉存)
             if (result.extImg) {
-               showLoading(true, "轉存圖片...");
+               showLoading(true, "下載並壓縮圖片...");
                await compressAndUpload(result.extImg, true); 
             } else {
-               document.getElementById('imgPreview').innerHTML = "<p style='color:red;'>無法自動抓圖，請手動拍照</p>";
+               document.getElementById('imgPreview').innerHTML = "<p style='color:red; font-size:1.2rem;'>❌ 抓不到圖片，請手動拍照</p>";
                document.getElementById('buyImg').value = "";
             }
 
             if(finalId) {
-                alert("✅ 掃描成功！");
+                alert("✅ 掃描成功！ID 已填入");
             } else {
-                alert("⚠️ 請手動輸入 ID");
+                alert("⚠️ 已抓到網址，但找不到 ID，請手動輸入");
             }
 
         } catch(e) {
-            alert("伺服器連線異常");
+            alert("伺服器忙碌中，請稍後再試");
         }
         showLoading(false);
     }
 
-    // --- 圖片壓縮與上傳核心 ---
+    // --- 圖片處理 ---
     async function compressAndUpload(source, isUrl = false) {
         return new Promise((resolve) => {
             const img = new Image();
@@ -285,7 +527,7 @@
                 });
             };
             img.onerror = function() {
-                document.getElementById('imgPreview').innerHTML = "<p style='color:red;'>無法載入圖片 (防盜連)，請手動拍照</p>";
+                document.getElementById('imgPreview').innerHTML = "<p style='color:red;'>圖片下載失敗 (防盜連)，請手動拍照</p>";
                 resolve(null);
             };
             img.src = source;
@@ -295,7 +537,7 @@
     async function handleFileUpload(input) {
         const file = input.files[0];
         if (!file) return;
-        showLoading(true, "壓縮上傳中...");
+        showLoading(true, "圖片壓縮上傳中...");
         const reader = new FileReader();
         reader.onload = function(e) { compressAndUpload(e.target.result); showLoading(false); };
         reader.readAsDataURL(file);
@@ -311,15 +553,17 @@
         } catch(e) { return ""; }
     }
 
+    // --- 進銷存操作 ---
     async function doBuy() {
         const id = document.getElementById('buyId').value;
-        if(!id) { alert("請輸入商品 ID"); return; }
+        const name = document.getElementById('buyName').value;
+        if(!id || !name) { alert("⚠️ 請輸入「商品 ID」和「商品名稱」"); return; }
         
-        showLoading(true, "正在入庫...");
+        showLoading(true, "正在寫入資料庫...");
         const payload = { 
             action: "buy", 
             id: id, 
-            name: document.getElementById('buyName').value, 
+            name: name, 
             cost: document.getElementById('buyCost').value, 
             price: document.getElementById('buyPrice').value, 
             supplier: document.getElementById('buySupplier').value, 
@@ -331,10 +575,9 @@
         const text = await res.text();
         
         if (text && text.includes("DUPLICATE")) {
-            alert("❌ 錯誤：此 ID 已存在！");
+            alert("❌ 錯誤：這個 ID 已經在倉庫裡了！");
         } else {
-            alert("操作完成！(若重複則不會入庫)");
-            // 成功才清空
+            alert("✅ 入庫成功！");
             document.getElementById('buyId').value = "";
             document.getElementById('buyName').value = "";
             document.getElementById('buyImg').value = "";
@@ -346,18 +589,39 @@
     }
 
     async function doSale() {
-        const item = inventory.find(i => i[0] == document.getElementById('saleItem').value);
-        await sendData({ action: "sale", id: item[0], name: item[1], customer: document.getElementById('saleClient').value, total: document.getElementById('saleFinalPrice').value, user: currentUser });
+        const id = document.getElementById('saleItem').value;
+        if(!id) { alert("請選擇商品"); return; }
+        
+        showLoading(true, "結帳中...");
+        const item = inventory.find(i => i[0] == id);
+        await sendData({ 
+            action: "sale", 
+            id: item[0], 
+            name: item[1], 
+            customer: document.getElementById('saleClient').value, 
+            total: document.getElementById('saleFinalPrice').value, 
+            user: currentUser 
+        });
     }
 
     async function addContact() {
-        await sendData({ action: "addContact", targetSheet: document.getElementById('contactType').value, id: document.getElementById('contactId').value, name: document.getElementById('contactName').value, phone: document.getElementById('contactPhone').value, note: document.getElementById('contactNote').value });
+        const name = document.getElementById('contactName').value;
+        if(!name) { alert("請輸入名稱"); return; }
+        showLoading(true, "新增中...");
+        await sendData({ 
+            action: "addContact", 
+            targetSheet: document.getElementById('contactType').value, 
+            id: document.getElementById('contactId').value, 
+            name: name, 
+            phone: document.getElementById('contactPhone').value, 
+            note: document.getElementById('contactNote').value 
+        });
     }
 
     async function sendData(p) {
-        showLoading(true);
         await fetch(API_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(p) });
-        alert("操作完成！");
+        alert("✅ 操作完成！");
+        showLoading(false);
         syncAll();
     }
 
@@ -368,7 +632,7 @@
         el.classList.add('active');
     }
 
-    function showLoading(s, text="載入中...") { 
+    function showLoading(s, text="處理中...") { 
         document.getElementById('loading').style.display = s ? 'flex' : 'none'; 
         document.getElementById('loadingText').innerText = text;
     }
