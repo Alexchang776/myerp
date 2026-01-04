@@ -89,7 +89,7 @@
         .btn-danger { background: var(--danger); }
         .btn-sm { width: auto; height: 35px; font-size: 0.9rem; padding: 0 15px; margin: 0; }
 
-        /* --- Dashboard Grid --- */
+        /* --- 💎 華麗儀表板：圖片圖示設定 --- */
         .dashboard-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; padding: 10px 0; }
         .dash-btn {
             width: 100%; aspect-ratio: 1 / 1; height: auto; border-radius: 24px;
@@ -98,9 +98,20 @@
             transition: transform 0.1s; position: relative; overflow: hidden;
         }
         .dash-btn:active { transform: scale(0.96); }
-        .dash-icon { font-size: 4rem; margin-bottom: 10px; filter: drop-shadow(0 2px 5px rgba(0,0,0,0.2)); }
-        .dash-text { font-size: 1.3rem; font-weight: bold; letter-spacing: 1px; }
 
+        /* 新增：圖片圖示樣式 */
+        .dash-icon-img {
+            width: 75px; /* 圖示大小 */
+            height: 75px;
+            object-fit: contain;
+            margin-bottom: 8px;
+            filter: drop-shadow(0 5px 5px rgba(0,0,0,0.3)); /* 投影讓它浮起來 */
+            transition: transform 0.3s;
+        }
+        
+        .dash-text { font-size: 1.1rem; font-weight: 800; letter-spacing: 1px; text-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+
+        /* 按鈕漸層背景 (保持不變) */
         .bg-buy { background: linear-gradient(135deg, #6366f1, #4f46e5); }
         .bg-sale { background: linear-gradient(135deg, #d4af37, #b49018); color:#fff; }
         .bg-stock { background: linear-gradient(135deg, #10b981, #059669); }
@@ -153,20 +164,30 @@
 
     <div id="page-dashboard" class="page active">
         <div class="dashboard-grid">
+            
             <div class="dash-btn bg-buy" onclick="showPage('buy')">
-                <div class="dash-icon">📥</div><div class="dash-text">進貨單</div>
+                <img src="https://cdn-icons-png.flaticon.com/512/6728/6728372.png" class="dash-icon-img">
+                <div class="dash-text">進貨單</div>
             </div>
+
             <div class="dash-btn bg-sale" onclick="showPage('sale')">
-                <div class="dash-icon">💰</div><div class="dash-text">銷貨單</div>
+                <img src="https://cdn-icons-png.flaticon.com/512/2489/2489285.png" class="dash-icon-img">
+                <div class="dash-text">銷貨單</div>
             </div>
+
             <div class="dash-btn bg-stock" onclick="showPage('stock')">
-                <div class="dash-icon">📦</div><div class="dash-text">庫存資料</div>
+                <img src="https://cdn-icons-png.flaticon.com/512/2906/2906236.png" class="dash-icon-img">
+                <div class="dash-text">庫存資料</div>
             </div>
+
             <div class="dash-btn bg-client" onclick="openContactPage('Clients')">
-                <div class="dash-icon">👥</div><div class="dash-text">客戶資料</div>
+                <img src="https://cdn-icons-png.flaticon.com/512/9370/9370271.png" class="dash-icon-img">
+                <div class="dash-text">客戶資料</div>
             </div>
+
             <div class="dash-btn bg-supplier" onclick="openContactPage('Suppliers')">
-                <div class="dash-icon">🏭</div><div class="dash-text">廠商資料</div>
+                <img src="https://cdn-icons-png.flaticon.com/512/2618/2618485.png" class="dash-icon-img">
+                <div class="dash-text">廠商資料</div>
             </div>
         </div>
     </div>
@@ -174,38 +195,11 @@
     <div id="page-sale" class="page">
         <div class="card">
             <div class="section-title">銷貨結帳</div>
-            
-            <div class="form-group">
-                <label>交易日期</label>
-                <input type="date" id="saleDate">
-            </div>
-
-            <div class="form-group">
-                <label>選擇商品</label>
-                <select id="saleItem" onchange="updateSalePrice()"></select>
-            </div>
-            <div class="form-group">
-                <label>選擇客戶</label>
-                <select id="saleClient"></select>
-            </div>
-            
-            <div class="form-group">
-                <label>付款方式</label>
-                <select id="salePayment">
-                    <option value="現金">現金</option>
-                    <option value="匯款">匯款</option>
-                    <option value="信用卡">信用卡</option>
-                    <option value="台灣Pay">台灣 Pay</option>
-                    <option value="Line Pay">Line Pay</option>
-                    <option value="其他">其他</option>
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label>實收金額</label>
-                <input type="number" id="saleFinalPrice" style="color:var(--success); font-weight:bold; font-size:1.4rem;">
-            </div>
-            
+            <div class="form-group"><label>交易日期</label><input type="date" id="saleDate"></div>
+            <div class="form-group"><label>選擇商品</label><select id="saleItem" onchange="updateSalePrice()"></select></div>
+            <div class="form-group"><label>選擇客戶</label><select id="saleClient"></select></div>
+            <div class="form-group"><label>付款方式</label><select id="salePayment"><option value="現金">現金</option><option value="匯款">匯款</option><option value="信用卡">信用卡</option><option value="台灣Pay">台灣 Pay</option><option value="Line Pay">Line Pay</option><option value="其他">其他</option></select></div>
+            <div class="form-group"><label>實收金額</label><input type="number" id="saleFinalPrice" style="color:var(--success); font-weight:bold; font-size:1.4rem;"></div>
             <button class="btn btn-action" onclick="doSale()">✅ 確認售出</button>
         </div>
     </div>
@@ -213,29 +207,15 @@
     <div id="page-buy" class="page">
         <div class="card">
             <div class="section-title">商品入庫</div>
-            
-            <div class="form-group">
-                <label>進貨日期</label>
-                <input type="date" id="buyDate">
-            </div>
-
+            <div class="form-group"><label>進貨日期</label><input type="date" id="buyDate"></div>
             <button class="btn btn-scan" onclick="startScan()">📷 掃描鑑定書</button>
-            <div id="scan-container">
-                <canvas id="qr-canvas"></canvas>
-                <button class="btn btn-danger" onclick="stopScan()">關閉相機</button>
-            </div>
-            
+            <div id="scan-container"><canvas id="qr-canvas"></canvas><button class="btn btn-danger" onclick="stopScan()">關閉相機</button></div>
             <div class="form-group"><label>編號 (ID)</label><input type="text" id="buyId" readonly placeholder="掃描後填入"></div>
             <div class="form-group"><label>名稱</label><input type="text" id="buyName"></div>
             <div class="form-group"><label>廠商</label><select id="buySupplier"></select></div>
-            <div style="display:flex; gap:10px;">
-                <div style="flex:1"><label>成本</label><input type="number" id="buyCost"></div>
-                <div style="flex:1"><label>定價</label><input type="number" id="buyPrice"></div>
-            </div>
+            <div style="display:flex; gap:10px;"><div style="flex:1"><label>成本</label><input type="number" id="buyCost"></div><div style="flex:1"><label>定價</label><input type="number" id="buyPrice"></div></div>
             <label style="margin-top:15px;">商品照片</label>
-            <div class="img-preview-box" id="imgPreview" onclick="document.getElementById('cameraInput').click()">
-                <div style="text-align:center;"><div style="font-size:2rem;">📸</div><div>點擊拍照</div></div>
-            </div>
+            <div class="img-preview-box" id="imgPreview" onclick="document.getElementById('cameraInput').click()"><div style="text-align:center;"><div style="font-size:2rem;">📸</div><div>點擊拍照</div></div></div>
             <input type="file" id="cameraInput" accept="image/*" style="display:none;" onchange="handleFileUpload(this)">
             <input type="hidden" id="buyImg"><input type="hidden" id="buyCertUrl">
             <button class="btn btn-primary" onclick="doBuy()">💾 儲存入庫</button>
@@ -251,28 +231,15 @@
 
     <div id="page-contacts" class="page">
         <div class="card">
-            <div class="section-title">
-                <span id="contactTitle">資料列表</span>
-                <button class="btn btn-primary btn-sm" onclick="toggleContactMode()">➕ 新增</button>
-            </div>
-
-            <div id="contactListArea">
-                <input type="text" id="searchContact" class="search-bar" placeholder="🔍 搜尋名稱或電話..." oninput="renderContactList()">
-                <div id="contactListView" class="contact-list"></div>
-            </div>
-
+            <div class="section-title"><span id="contactTitle">資料列表</span><button class="btn btn-primary btn-sm" onclick="toggleContactMode()">➕ 新增</button></div>
+            <div id="contactListArea"><input type="text" id="searchContact" class="search-bar" placeholder="🔍 搜尋名稱或電話..." oninput="renderContactList()"><div id="contactListView" class="contact-list"></div></div>
             <div id="contactAddArea" style="display:none;">
-                <div class="form-group" style="display:none;">
-                    <label>類型</label>
-                    <select id="contactType"><option value="Clients">客戶</option><option value="Suppliers">廠商</option></select>
-                </div>
+                <div class="form-group" style="display:none;"><label>類型</label><select id="contactType"><option value="Clients">客戶</option><option value="Suppliers">廠商</option></select></div>
                 <div class="form-group"><label>編號</label><input type="text" id="contactId"></div>
                 <div class="form-group"><label>名稱</label><input type="text" id="contactName"></div>
                 <div class="form-group"><label>電話</label><input type="text" id="contactPhone"></div>
                 <div class="form-group"><label>備註</label><input type="text" id="contactNote"></div>
-                
-                <button class="btn btn-primary" onclick="addContact()">💾 儲存資料</button>
-                <button class="btn btn-danger" onclick="toggleContactMode()">↩ 取消</button>
+                <button class="btn btn-primary" onclick="addContact()">💾 儲存資料</button><button class="btn btn-danger" onclick="toggleContactMode()">↩ 取消</button>
             </div>
         </div>
     </div>
@@ -286,6 +253,7 @@
 </div>
 
 <script>
+    // ★★★ 務必換成您的 GAS 網址 ★★★
     const API_URL = "https://script.google.com/macros/s/AKfycbymN7tFDVzZhi7HUanHBh9YKP07lgV1M4LrgNT7E5igPQU39KuGIIsxW-BWw4CMBPhcjA/exec";
     
     let inventory = [], clients = [], suppliers = [], currentUser = "";
@@ -376,12 +344,9 @@
         document.getElementById('contactType').value = type;
         const title = type === 'Clients' ? '客戶資料' : '廠商資料';
         document.getElementById('contactTitle').innerText = title;
-        
-        // 重置為列表模式
         document.getElementById('contactListArea').style.display = 'block';
         document.getElementById('contactAddArea').style.display = 'none';
         document.getElementById('searchContact').value = "";
-        
         renderContactList();
         showPage('contacts');
     }
@@ -390,11 +355,9 @@
         const listArea = document.getElementById('contactListArea');
         const addArea = document.getElementById('contactAddArea');
         if (listArea.style.display === 'none') {
-            listArea.style.display = 'block';
-            addArea.style.display = 'none';
+            listArea.style.display = 'block'; addArea.style.display = 'none';
         } else {
-            listArea.style.display = 'none';
-            addArea.style.display = 'block';
+            listArea.style.display = 'none'; addArea.style.display = 'block';
         }
     }
 
@@ -406,26 +369,16 @@
         
         let html = '';
         dataSource.forEach(item => {
-            // [ID, Name, Phone, Note, Spend(Only Client)]
             const name = item[1].toString();
             const phone = item[2].toString();
-            
             if (name.toLowerCase().includes(keyword) || phone.includes(keyword)) {
                 let extraInfo = '';
-                if (type === 'Clients') {
-                    // 顯示累積消費
-                    extraInfo = `<div class="contact-amount">累積: $${item[4] || 0}</div>`;
-                }
-                
+                if (type === 'Clients') extraInfo = `<div class="contact-amount">累積: $${item[4] || 0}</div>`;
                 html += `
                     <div class="contact-item">
-                        <div class="contact-info">
-                            <b>${name}</b>
-                            <span>${phone}</span>
-                        </div>
+                        <div class="contact-info"><b>${name}</b><span>${phone}</span></div>
                         ${extraInfo}
-                    </div>
-                `;
+                    </div>`;
             }
         });
         listContainer.innerHTML = html || '<div style="padding:20px; text-align:center; color:#999;">無相符資料</div>';
@@ -440,7 +393,7 @@
         if(!id || !name) { alert("請輸入 ID 與 名稱"); return; }
         showLoading(true);
         const payload = { 
-            action: "buy", id: id, name: name, date: date, // 新增日期
+            action: "buy", id: id, name: name, date: date,
             cost: document.getElementById('buyCost').value, 
             price: document.getElementById('buyPrice').value, 
             supplier: document.getElementById('buySupplier').value, 
@@ -468,9 +421,7 @@
         const item = inventory.find(i => i[0] == id);
         
         await sendData({ 
-            action: "sale", 
-            id: item[0], name: item[1], 
-            date: date, payment: payment, // 新增欄位
+            action: "sale", id: item[0], name: item[1], date: date, payment: payment,
             customer: document.getElementById('saleClient').value, 
             total: document.getElementById('saleFinalPrice').value, 
             user: currentUser 
@@ -481,49 +432,15 @@
         if(!document.getElementById('contactName').value) { alert("請輸入名稱"); return; }
         showLoading(true);
         await sendData({ action: "addContact", targetSheet: document.getElementById('contactType').value, id: document.getElementById('contactId').value, name: document.getElementById('contactName').value, phone: document.getElementById('contactPhone').value, note: document.getElementById('contactNote').value });
-        toggleContactMode(); // 回到列表
+        toggleContactMode();
     }
 
-    // --- 掃描/圖片/共用函數 (與之前相同) ---
-    function startScan() {
-        scanning = true; document.getElementById("scan-container").style.display = "block";
-        navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } }).then(s=>{ video.srcObject=s; video.setAttribute("playsinline",true); video.play(); requestAnimationFrame(tick); }).catch(e=>{alert("無相機權限");stopScan();});
-    }
+    // --- 掃描/圖片/共用函數 ---
+    function startScan() { scanning = true; document.getElementById("scan-container").style.display = "block"; navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } }).then(s=>{ video.srcObject=s; video.setAttribute("playsinline",true); video.play(); requestAnimationFrame(tick); }).catch(e=>{alert("無相機權限");stopScan();}); }
     function stopScan() { scanning=false; if(video.srcObject)video.srcObject.getTracks().forEach(t=>t.stop()); document.getElementById("scan-container").style.display="none"; }
-    function tick() {
-        if(!scanning)return; 
-        if(video.readyState===video.HAVE_ENOUGH_DATA){
-            canvasElement.height=video.videoHeight; canvasElement.width=video.videoWidth; 
-            canvas.drawImage(video,0,0,canvasElement.width,canvasElement.height);
-            var code=jsQR(canvas.getImageData(0,0,canvasElement.width,canvasElement.height).data,canvasElement.width,canvasElement.height,{inversionAttempts:"dontInvert"});
-            if(code&&code.data){stopScan();handleCertScan(code.data);}
-        }
-        requestAnimationFrame(tick);
-    }
-    async function handleCertScan(url) {
-        showLoading(true); document.getElementById('buyCertUrl').value=url;
-        try{
-            const res=await fetch(API_URL,{method:'POST',body:JSON.stringify({action:"scanCertificate",url:url})});
-            const r=await res.json();
-            document.getElementById('buyId').value=r.id||(url.match(/ZSJ\d+/i)?url.match(/ZSJ\d+/i)[0]:"");
-            if(r.extImg)await compressAndUpload(r.extImg,true); else document.getElementById('imgPreview').innerHTML='手動拍照';
-            if(r.id)alert("✅ 掃描成功");else alert("⚠️ 手動輸入ID");
-        }catch(e){alert("解析失敗");}showLoading(false);
-    }
-    async function compressAndUpload(src,isUrl=false){
-        return new Promise(r=>{
-            const i=new Image(); i.crossOrigin="Anonymous";
-            i.onload=()=>{
-                const c=document.createElement('canvas'),x=c.getContext('2d'),M=800;
-                let w=i.width,h=i.height; if(w>h){if(w>M){h*=M/w;w=M}}else{if(h>M){w*=M/h;h=M}}
-                c.width=w;c.height=h;x.drawImage(i,0,0,w,h);
-                uploadToDrive(c.toDataURL('image/jpeg',0.7).split(',')[1],"img_"+Date.now()+".jpg").then(u=>{
-                    document.getElementById('buyImg').value=u;
-                    document.getElementById('imgPreview').innerHTML=`<img src="${u}" class="preview-img">`;r(u);
-                });
-            };i.onerror=()=>{document.getElementById('imgPreview').innerHTML='無法抓圖';r(null);};i.src=src;
-        });
-    }
+    function tick() { if(!scanning)return; if(video.readyState===video.HAVE_ENOUGH_DATA){ canvasElement.height=video.videoHeight; canvasElement.width=video.videoWidth; canvas.drawImage(video,0,0,canvasElement.width,canvasElement.height); var code=jsQR(canvas.getImageData(0,0,canvasElement.width,canvasElement.height).data,canvasElement.width,canvasElement.height,{inversionAttempts:"dontInvert"}); if(code&&code.data){stopScan();handleCertScan(code.data);} } requestAnimationFrame(tick); }
+    async function handleCertScan(url) { showLoading(true); document.getElementById('buyCertUrl').value=url; try{ const res=await fetch(API_URL,{method:'POST',body:JSON.stringify({action:"scanCertificate",url:url})}); const r=await res.json(); document.getElementById('buyId').value=r.id||(url.match(/ZSJ\d+/i)?url.match(/ZSJ\d+/i)[0]:""); if(r.extImg)await compressAndUpload(r.extImg,true); else document.getElementById('imgPreview').innerHTML='手動拍照'; if(r.id)alert("✅ 掃描成功");else alert("⚠️ 手動輸入ID"); }catch(e){alert("解析失敗");}showLoading(false); }
+    async function compressAndUpload(src,isUrl=false){ return new Promise(r=>{ const i=new Image(); i.crossOrigin="Anonymous"; i.onload=()=>{ const c=document.createElement('canvas'),x=c.getContext('2d'),M=800; let w=i.width,h=i.height; if(w>h){if(w>M){h*=M/w;w=M}}else{if(h>M){w*=M/h;h=M}} c.width=w;c.height=h;x.drawImage(i,0,0,w,h); uploadToDrive(c.toDataURL('image/jpeg',0.7).split(',')[1],"img_"+Date.now()+".jpg").then(u=>{ document.getElementById('buyImg').value=u; document.getElementById('imgPreview').innerHTML=`<img src="${u}" class="preview-img">`;r(u); }); };i.onerror=()=>{document.getElementById('imgPreview').innerHTML='無法抓圖';r(null);};i.src=src; }); }
     async function handleFileUpload(ip){if(!ip.files[0])return;showLoading(true);const rd=new FileReader();rd.onload=e=>{compressAndUpload(e.target.result);showLoading(false);};rd.readAsDataURL(ip.files[0]);}
     async function uploadToDrive(b64,fn){try{const r=await fetch(API_URL,{method:'POST',body:JSON.stringify({action:"uploadImage",base64Data:b64,mimeType:"image/jpeg",fileName:fn})});return await r.text();}catch(e){return"";}}
     async function sendData(p){ await fetch(API_URL,{method:'POST',mode:'no-cors',body:JSON.stringify(p)}); alert("✅ 完成"); showLoading(false); syncAll(); }
