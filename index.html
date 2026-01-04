@@ -4,6 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>珠寶 ERP 旗艦版</title>
+    
+    <link rel="icon" href="https://drive.google.com/thumbnail?id=1T-Yb-Qq2LEbkzERCG62bLgiX6o8S3Fub&sz=w512" type="image/x-icon">
+    <link rel="apple-touch-icon" sizes="180x180" href="https://drive.google.com/thumbnail?id=1T-Yb-Qq2LEbkzERCG62bLgiX6o8S3Fub&sz=w512">
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#0f172a">
+
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
     <style>
         /* --- 全局設定 --- */
@@ -48,7 +56,14 @@
             text-align: center; width: 100%; max-width: 350px; color: white;
         }
 
-        .login-title { font-size: 1.8rem; font-weight: 300; margin-bottom: 30px; letter-spacing: 2px; color: var(--accent); }
+        .login-logo {
+            width: 120px; height: 120px; border-radius: 24px;
+            margin-bottom: 20px; object-fit: cover;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            border: 2px solid rgba(255,255,255,0.2);
+        }
+
+        .login-title { font-size: 1.5rem; font-weight: 300; margin-bottom: 30px; letter-spacing: 2px; color: var(--accent); }
         .login-input {
             width: 100%; padding: 15px; margin-bottom: 20px;
             background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(255, 255, 255, 0.1);
@@ -121,43 +136,38 @@
         .btn-scan { background: linear-gradient(135deg, #3b82f6, #2563eb); }
         .btn-danger { background: var(--danger); }
 
-        /* --- 首頁大按鈕樣式 --- */
+        /* --- Dashboard Grid --- */
         .dashboard-grid {
             display: grid;
-            grid-template-columns: 1fr;
+            grid-template-columns: 1fr 1fr;
             gap: 15px;
+            padding: 10px 0;
         }
         .dash-btn {
-            height: 90px; /* 超大按鈕 */
-            border-radius: 16px;
+            height: 160px;
+            border-radius: 24px;
             display: flex;
+            flex-direction: column;
             align-items: center;
-            padding: 0 25px;
+            justify-content: center;
             color: white;
-            font-size: 1.4rem;
-            font-weight: bold;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
             cursor: pointer;
             transition: transform 0.1s;
             position: relative;
             overflow: hidden;
         }
-        .dash-btn:active { transform: scale(0.98); }
-        
-        .dash-btn::after {
-            content: '➔';
-            position: absolute; right: 20px;
-            font-size: 1.2rem; opacity: 0.7;
-        }
+        .dash-btn:active { transform: scale(0.96); }
+        .dash-icon { font-size: 3.5rem; margin-bottom: 15px; filter: drop-shadow(0 2px 5px rgba(0,0,0,0.2)); }
+        .dash-text { font-size: 1.1rem; font-weight: bold; letter-spacing: 1px; }
 
-        /* 按鈕配色 */
         .bg-buy { background: linear-gradient(135deg, #6366f1, #4f46e5); }
-        .bg-sale { background: linear-gradient(135deg, #d4af37, #b49018); color: #0f172a; }
+        .bg-sale { background: linear-gradient(135deg, #d4af37, #b49018); color:#fff; }
         .bg-stock { background: linear-gradient(135deg, #10b981, #059669); }
         .bg-client { background: linear-gradient(135deg, #3b82f6, #2563eb); }
         .bg-supplier { background: linear-gradient(135deg, #64748b, #475569); }
 
-        /* --- 其他樣式 --- */
+        /* --- 其他 --- */
         .img-preview-box {
             width: 100%; height: 220px; background: #f1f5f9; 
             border-radius: 12px; border: 2px dashed #cbd5e1;
@@ -190,7 +200,7 @@
 
 <div id="loginOverlay">
     <div class="login-card">
-        <div style="font-size:3.5rem; margin-bottom:10px;">💎</div>
+        <img src="https://drive.google.com/thumbnail?id=1T-Yb-Qq2LEbkzERCG62bLgiX6o8S3Fub&sz=w512" class="login-logo">
         <div class="login-title">JEWELRY ERP</div>
         <input type="text" id="acc" class="login-input" placeholder="ACCOUNT">
         <input type="password" id="pwd" class="login-input" placeholder="PASSWORD">
@@ -205,19 +215,24 @@
     <div id="page-dashboard" class="page active">
         <div class="dashboard-grid">
             <div class="dash-btn bg-buy" onclick="showPage('buy')">
-                <span>📥 1. 進貨單</span>
+                <div class="dash-icon">📥</div>
+                <div class="dash-text">1. 進貨單</div>
             </div>
             <div class="dash-btn bg-sale" onclick="showPage('sale')">
-                <span>💰 2. 銷貨單</span>
+                <div class="dash-icon">💰</div>
+                <div class="dash-text">2. 銷貨單</div>
             </div>
             <div class="dash-btn bg-stock" onclick="showPage('stock')">
-                <span>📦 3. 庫存資料</span>
+                <div class="dash-icon">📦</div>
+                <div class="dash-text">3. 庫存資料</div>
             </div>
             <div class="dash-btn bg-client" onclick="openContactPage('Clients')">
-                <span>👥 4. 客戶資料</span>
+                <div class="dash-icon">👥</div>
+                <div class="dash-text">4. 客戶資料</div>
             </div>
-            <div class="dash-btn bg-supplier" onclick="openContactPage('Suppliers')">
-                <span>🏭 5. 廠商資料</span>
+            <div class="dash-btn bg-supplier" onclick="openContactPage('Suppliers')" style="grid-column: span 2;">
+                <div class="dash-icon">🏭</div>
+                <div class="dash-text">5. 廠商資料</div>
             </div>
         </div>
     </div>
@@ -289,7 +304,6 @@
 </div>
 
 <script>
-    // ★★★ 您的網址已整合 ★★★
     const API_URL = "https://script.google.com/macros/s/AKfycbymN7tFDVzZhi7HUanHBh9YKP07lgV1M4LrgNT7E5igPQU39KuGIIsxW-BWw4CMBPhcjA/exec";
     
     let inventory = [], clients = [], suppliers = [], currentUser = "";
@@ -508,15 +522,12 @@
     }
 
     function showPage(id, el) {
-        // 先移除所有 active
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
         document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
         
-        // 啟動目標頁面
         const targetPage = document.getElementById('page-' + id);
         if (targetPage) targetPage.classList.add('active');
         
-        // 處理導航按鈕亮燈
         if (id === 'dashboard') {
             document.querySelector('.nav-item:nth-child(1)').classList.add('active');
         } else if (el) {
