@@ -3,14 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>珠寶 ERP 奢華旗艦版</title>
+    <title>珠寶 ERP 旗艦版</title>
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
     <style>
         /* --- 全局設定 --- */
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
         
         :root { 
-            /* 奢華配色 */
             --primary: #0f172a;       /* 深夜藍 */
             --accent: #d4af37;        /* 香檳金 */
             --bg: #f8f9fa;            
@@ -87,11 +86,11 @@
             align-items: center; justify-content: center; 
             color: #94a3b8; font-size: 0.8rem; font-weight: 600; cursor: pointer;
         }
-        .nav-icon { font-size: 1.8rem; margin-bottom: 5px; opacity: 0.5; }
+        .nav-icon { font-size: 1.6rem; margin-bottom: 5px; opacity: 0.5; }
         .nav-item.active { color: var(--primary); }
         .nav-item.active .nav-icon { opacity: 1; transform: scale(1.2); }
 
-        .page { display: none; padding: 15px; animation: fadeIn 0.4s; }
+        .page { display: none; padding: 15px; animation: fadeIn 0.3s; }
         .page.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
@@ -122,6 +121,43 @@
         .btn-scan { background: linear-gradient(135deg, #3b82f6, #2563eb); }
         .btn-danger { background: var(--danger); }
 
+        /* --- 首頁大按鈕樣式 --- */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+        }
+        .dash-btn {
+            height: 90px; /* 超大按鈕 */
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            padding: 0 25px;
+            color: white;
+            font-size: 1.4rem;
+            font-weight: bold;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            cursor: pointer;
+            transition: transform 0.1s;
+            position: relative;
+            overflow: hidden;
+        }
+        .dash-btn:active { transform: scale(0.98); }
+        
+        .dash-btn::after {
+            content: '➔';
+            position: absolute; right: 20px;
+            font-size: 1.2rem; opacity: 0.7;
+        }
+
+        /* 按鈕配色 */
+        .bg-buy { background: linear-gradient(135deg, #6366f1, #4f46e5); }
+        .bg-sale { background: linear-gradient(135deg, #d4af37, #b49018); color: #0f172a; }
+        .bg-stock { background: linear-gradient(135deg, #10b981, #059669); }
+        .bg-client { background: linear-gradient(135deg, #3b82f6, #2563eb); }
+        .bg-supplier { background: linear-gradient(135deg, #64748b, #475569); }
+
+        /* --- 其他樣式 --- */
         .img-preview-box {
             width: 100%; height: 220px; background: #f1f5f9; 
             border-radius: 12px; border: 2px dashed #cbd5e1;
@@ -166,7 +202,27 @@
 
 <div id="content-area">
 
-    <div id="page-sale" class="page active">
+    <div id="page-dashboard" class="page active">
+        <div class="dashboard-grid">
+            <div class="dash-btn bg-buy" onclick="showPage('buy')">
+                <span>📥 1. 進貨單</span>
+            </div>
+            <div class="dash-btn bg-sale" onclick="showPage('sale')">
+                <span>💰 2. 銷貨單</span>
+            </div>
+            <div class="dash-btn bg-stock" onclick="showPage('stock')">
+                <span>📦 3. 庫存資料</span>
+            </div>
+            <div class="dash-btn bg-client" onclick="openContactPage('Clients')">
+                <span>👥 4. 客戶資料</span>
+            </div>
+            <div class="dash-btn bg-supplier" onclick="openContactPage('Suppliers')">
+                <span>🏭 5. 廠商資料</span>
+            </div>
+        </div>
+    </div>
+
+    <div id="page-sale" class="page">
         <div class="card">
             <div class="section-title">快速結帳</div>
             <div class="form-group"><label>選擇商品</label><select id="saleItem" onchange="updateSalePrice()"></select></div>
@@ -211,22 +267,25 @@
 
     <div id="page-contacts" class="page">
         <div class="card">
-            <div class="section-title">新增名單</div>
-            <div class="form-group"><label>類型</label><select id="contactType"><option value="Clients">客戶</option><option value="Suppliers">廠商</option></select></div>
+            <div class="section-title" id="contactTitle">新增資料</div>
+            <div class="form-group" style="display:none;">
+                <label>類型</label>
+                <select id="contactType"><option value="Clients">客戶</option><option value="Suppliers">廠商</option></select>
+            </div>
             <div class="form-group"><label>編號</label><input type="text" id="contactId"></div>
             <div class="form-group"><label>名稱</label><input type="text" id="contactName"></div>
             <div class="form-group"><label>電話</label><input type="text" id="contactPhone"></div>
             <div class="form-group"><label>備註</label><input type="text" id="contactNote"></div>
-            <button class="btn btn-primary" onclick="addContact()">➕ 新增資料</button>
+            <button class="btn btn-primary" onclick="addContact()">➕ 儲存資料</button>
         </div>
     </div>
 </div>
 
 <div class="nav-bar">
-    <div class="nav-item active" onclick="showPage('sale', this)"><div class="nav-icon">💰</div><div>銷貨</div></div>
+    <div class="nav-item active" onclick="showPage('dashboard', this)"><div class="nav-icon">🏠</div><div>首頁</div></div>
     <div class="nav-item" onclick="showPage('buy', this)"><div class="nav-icon">📥</div><div>進貨</div></div>
+    <div class="nav-item" onclick="showPage('sale', this)"><div class="nav-icon">💰</div><div>銷貨</div></div>
     <div class="nav-item" onclick="showPage('stock', this)"><div class="nav-icon">📦</div><div>庫存</div></div>
-    <div class="nav-item" onclick="showPage('contacts', this)"><div class="nav-icon">👥</div><div>名單</div></div>
 </div>
 
 <script>
@@ -273,7 +332,6 @@
     }
 
     function renderAll() {
-        // 渲染選單與列表
         const activeItems = inventory.filter(i => i[2] > 0);
         let saleOpts = '<option value="">請選擇商品...</option>';
         activeItems.forEach(i => saleOpts += `<option value="${i[0]}">${i[1]} ($${i[4]})</option>`);
@@ -309,7 +367,14 @@
         if(item) document.getElementById('saleFinalPrice').value = item[4];
     }
 
-    // --- 掃描功能 ---
+    // --- 特殊頁面切換 ---
+    function openContactPage(type) {
+        document.getElementById('contactType').value = type;
+        document.getElementById('contactTitle').innerText = (type === 'Clients' ? '👥 新增客戶資料' : '🏭 新增廠商資料');
+        showPage('contacts');
+    }
+
+    // --- 掃描與相機 ---
     function startScan() {
         scanning = true;
         document.getElementById("scan-container").style.display = "block";
@@ -443,10 +508,21 @@
     }
 
     function showPage(id, el) {
+        // 先移除所有 active
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-        document.getElementById('page-' + id).classList.add('active');
         document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-        el.classList.add('active');
+        
+        // 啟動目標頁面
+        const targetPage = document.getElementById('page-' + id);
+        if (targetPage) targetPage.classList.add('active');
+        
+        // 處理導航按鈕亮燈
+        if (id === 'dashboard') {
+            document.querySelector('.nav-item:nth-child(1)').classList.add('active');
+        } else if (el) {
+            el.classList.add('active');
+        }
+        
         window.scrollTo(0, 0);
     }
 
