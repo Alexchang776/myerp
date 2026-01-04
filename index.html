@@ -136,15 +136,17 @@
         .btn-scan { background: linear-gradient(135deg, #3b82f6, #2563eb); }
         .btn-danger { background: var(--danger); }
 
-        /* --- Dashboard Grid --- */
+        /* --- 💎 儀表板：正方形大按鈕樣式 (修正版) --- */
         .dashboard-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
+            grid-template-columns: 1fr 1fr; /* 兩欄 */
+            gap: 15px; /* 按鈕間距 */
             padding: 10px 0;
         }
         .dash-btn {
-            height: 160px;
+            width: 100%;
+            aspect-ratio: 1 / 1; /* ★強制正方形★ */
+            height: auto;        /* 高度自動跟隨寬度 */
             border-radius: 24px;
             display: flex;
             flex-direction: column;
@@ -158,8 +160,18 @@
             overflow: hidden;
         }
         .dash-btn:active { transform: scale(0.96); }
-        .dash-icon { font-size: 3.5rem; margin-bottom: 15px; filter: drop-shadow(0 2px 5px rgba(0,0,0,0.2)); }
-        .dash-text { font-size: 1.1rem; font-weight: bold; letter-spacing: 1px; }
+        
+        /* 圖示與字體放大 */
+        .dash-icon { 
+            font-size: 4rem; /* ★圖示放大★ */
+            margin-bottom: 10px; 
+            filter: drop-shadow(0 2px 5px rgba(0,0,0,0.2)); 
+        }
+        .dash-text { 
+            font-size: 1.3rem; /* ★字體放大★ */
+            font-weight: bold; 
+            letter-spacing: 1px; 
+        }
 
         .bg-buy { background: linear-gradient(135deg, #6366f1, #4f46e5); }
         .bg-sale { background: linear-gradient(135deg, #d4af37, #b49018); color:#fff; }
@@ -167,7 +179,7 @@
         .bg-client { background: linear-gradient(135deg, #3b82f6, #2563eb); }
         .bg-supplier { background: linear-gradient(135deg, #64748b, #475569); }
 
-        /* --- 其他 --- */
+        /* --- 其他樣式 --- */
         .img-preview-box {
             width: 100%; height: 220px; background: #f1f5f9; 
             border-radius: 12px; border: 2px dashed #cbd5e1;
@@ -216,23 +228,23 @@
         <div class="dashboard-grid">
             <div class="dash-btn bg-buy" onclick="showPage('buy')">
                 <div class="dash-icon">📥</div>
-                <div class="dash-text">1. 進貨單</div>
+                <div class="dash-text">進貨單</div>
             </div>
             <div class="dash-btn bg-sale" onclick="showPage('sale')">
                 <div class="dash-icon">💰</div>
-                <div class="dash-text">2. 銷貨單</div>
+                <div class="dash-text">銷貨單</div>
             </div>
             <div class="dash-btn bg-stock" onclick="showPage('stock')">
                 <div class="dash-icon">📦</div>
-                <div class="dash-text">3. 庫存資料</div>
+                <div class="dash-text">庫存資料</div>
             </div>
             <div class="dash-btn bg-client" onclick="openContactPage('Clients')">
                 <div class="dash-icon">👥</div>
-                <div class="dash-text">4. 客戶資料</div>
+                <div class="dash-text">客戶資料</div>
             </div>
-            <div class="dash-btn bg-supplier" onclick="openContactPage('Suppliers')" style="grid-column: span 2;">
+            <div class="dash-btn bg-supplier" onclick="openContactPage('Suppliers')">
                 <div class="dash-icon">🏭</div>
-                <div class="dash-text">5. 廠商資料</div>
+                <div class="dash-text">廠商資料</div>
             </div>
         </div>
     </div>
@@ -304,6 +316,7 @@
 </div>
 
 <script>
+    // ★★★ 您的網址 ★★★
     const API_URL = "https://script.google.com/macros/s/AKfycbymN7tFDVzZhi7HUanHBh9YKP07lgV1M4LrgNT7E5igPQU39KuGIIsxW-BWw4CMBPhcjA/exec";
     
     let inventory = [], clients = [], suppliers = [], currentUser = "";
