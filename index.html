@@ -3,121 +3,404 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>珠寶 ERP 旗艦版</title>
+    <title>Elite Jewelry ERP | 珠寶旗艦系統</title>
+    
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; font-family: -apple-system, sans-serif; }
-        :root { --primary: #0f172a; --accent: #d4af37; --bg: #f8f9fa; --card-bg: #ffffff; --text-main: #334155; --text-sub: #64748b; --success: #10b981; }
-        body { margin: 0; background: var(--bg); color: var(--text-main); padding-top: 60px; padding-bottom: 100px; }
-        
-        #loginOverlay { position: fixed; inset: 0; background: radial-gradient(circle at top left, #1e293b, #0f172a); z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 20px; }
-        .login-card { background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(20px); padding: 40px 30px; border-radius: 24px; border: 1px solid rgba(255, 255, 255, 0.2); width: 100%; max-width: 360px; text-align: center; color: white; }
-        .login-input { width: 100%; padding: 15px; margin-bottom: 20px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; color: white; text-align: center; font-size: 1.1rem; }
-        
-        .app-header { position: fixed; top: 0; width: 100%; height: 60px; background: white; display: flex; align-items: center; justify-content: center; font-weight: 800; box-shadow: 0 2px 10px rgba(0,0,0,0.05); z-index: 100; }
-        .nav-bar { position: fixed; bottom: 0; width: 100%; height: 80px; background: white; display: flex; border-top: 1px solid #e2e8f0; padding-bottom: env(safe-area-inset-bottom); z-index: 900; }
-        .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #94a3b8; font-size: 0.75rem; cursor: pointer; }
-        .nav-item.active { color: var(--primary); font-weight: bold; }
 
-        .page { display: none; padding: 15px; animation: fadeIn 0.3s; }
+    <style>
+        /* --- 奢華設計系統 --- */
+        :root {
+            --primary: #0f172a;       /* 午夜藍 */
+            --accent: #c5a059;        /* 香檳金 */
+            --accent-light: #e2d1a8;
+            --bg: #f8fafc;            /* 淺雲灰 */
+            --card-bg: #ffffff;
+            --text-main: #1e293b;
+            --text-sub: #64748b;
+            --success: #10b981;
+            --danger: #f43f5e;
+            --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+        }
+
+        * { 
+            box-sizing: border-box; 
+            -webkit-tap-highlight-color: transparent; 
+            font-family: 'Inter', -apple-system, system-ui, sans-serif; 
+        }
+
+        body { 
+            margin: 0; 
+            background: var(--bg); 
+            color: var(--text-main); 
+            padding-top: 70px; 
+            padding-bottom: 100px; 
+            line-height: 1.5;
+        }
+
+        /* --- 登入頁優化 --- */
+        #loginOverlay { 
+            position: fixed; 
+            inset: 0; 
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); 
+            z-index: 9999; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            padding: 20px; 
+        }
+        .login-card { 
+            background: rgba(255, 255, 255, 0.05); 
+            backdrop-filter: blur(15px); 
+            padding: 50px 30px; 
+            border-radius: 30px; 
+            border: 1px solid rgba(255, 255, 255, 0.1); 
+            width: 100%; 
+            max-width: 400px; 
+            text-align: center; 
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+        .login-logo {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            color: var(--accent);
+            letter-spacing: 4px;
+            font-weight: 200;
+        }
+        .login-input { 
+            width: 100%; 
+            padding: 16px; 
+            margin-bottom: 15px; 
+            background: rgba(255, 255, 255, 0.08); 
+            border: 1px solid rgba(255, 255, 255, 0.1); 
+            border-radius: 15px; 
+            color: white; 
+            text-align: center; 
+            font-size: 1rem; 
+            transition: 0.3s;
+        }
+        .login-input:focus { outline: none; border-color: var(--accent); background: rgba(255, 255, 255, 0.15); }
+
+        /* --- 頂部導航 --- */
+        .app-header { 
+            position: fixed; 
+            top: 0; 
+            width: 100%; 
+            height: 70px; 
+            background: rgba(255, 255, 255, 0.85); 
+            backdrop-filter: blur(10px); 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-weight: 700; 
+            letter-spacing: 2px;
+            color: var(--primary);
+            box-shadow: 0 1px 0 0 rgba(0,0,0,0.05); 
+            z-index: 100; 
+            font-size: 1.1rem;
+        }
+
+        /* --- 底部選單 --- */
+        .nav-bar { 
+            position: fixed; 
+            bottom: 20px; 
+            left: 20px;
+            right: 20px;
+            height: 70px; 
+            background: rgba(15, 23, 42, 0.95); 
+            backdrop-filter: blur(10px);
+            display: flex; 
+            justify-content: space-around; 
+            border-radius: 25px;
+            padding: 0 10px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
+            z-index: 900; 
+        }
+        .nav-item { 
+            flex: 1; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center; 
+            color: rgba(255,255,255,0.4); 
+            font-size: 0.7rem; 
+            transition: 0.3s;
+        }
+        .nav-item.active { color: var(--accent); }
+        .nav-icon { font-size: 1.4rem; margin-bottom: 4px; }
+
+        /* --- 卡片設計 --- */
+        .page { display: none; padding: 20px; animation: slideUp 0.4s ease-out; }
         .page.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         
-        .card { background: white; border-radius: 16px; padding: 20px; margin-bottom: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); }
-        .section-title { font-size: 1.1rem; font-weight: 800; margin-bottom: 15px; border-left: 4px solid var(--accent); padding-left: 10px; }
+        .card { 
+            background: var(--card-bg); 
+            border-radius: 24px; 
+            padding: 24px; 
+            margin-bottom: 20px; 
+            box-shadow: var(--shadow);
+            border: 1px solid rgba(0,0,0,0.02);
+        }
+        .section-title { 
+            font-size: 1.2rem; 
+            font-weight: 800; 
+            margin-bottom: 20px; 
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .section-title::before {
+            content: "";
+            width: 4px;
+            height: 20px;
+            background: var(--accent);
+            border-radius: 10px;
+        }
         
-        input, select { width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 1rem; margin-bottom: 10px; }
-        .btn { width: 100%; padding: 15px; border-radius: 12px; border: none; font-weight: 700; cursor: pointer; background: var(--primary); color: white; }
-        
+        /* --- 儀表板組件 --- */
+        .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
+        .stat-card {
+            padding: 20px;
+            border-radius: 20px;
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+        .stat-card.sales { background: linear-gradient(135deg, #1e293b 0%, #334155 100%); }
+        .stat-card.inventory { background: linear-gradient(135deg, #c5a059 0%, #b49018 100%); color: #0f172a; }
+        .stat-label { font-size: 0.8rem; opacity: 0.8; font-weight: 600; }
+        .stat-value { font-size: 1.5rem; font-weight: 800; margin-top: 5px; }
+
         .dashboard-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-        .dash-btn { aspect-ratio: 1; border-radius: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; font-weight: 800; background: linear-gradient(135deg, #6366f1, #4f46e5); }
+        .dash-btn { 
+            aspect-ratio: 1.2; 
+            border-radius: 24px; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center; 
+            background: white;
+            box-shadow: var(--shadow);
+            border: 1px solid rgba(0,0,0,0.03);
+            transition: 0.2s;
+            cursor: pointer;
+        }
+        .dash-btn:active { transform: scale(0.95); background: #f1f5f9; }
+        .dash-btn-icon { font-size: 2rem; margin-bottom: 10px; }
+        .dash-btn-text { font-weight: 700; font-size: 0.9rem; color: var(--primary); }
+
+        /* --- 表單與按鈕 --- */
+        input, select { 
+            width: 100%; 
+            padding: 14px; 
+            border: 1.5px solid #e2e8f0; 
+            border-radius: 15px; 
+            font-size: 1rem; 
+            margin-bottom: 15px;
+            transition: 0.3s;
+        }
+        input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 4px rgba(197, 160, 89, 0.1); }
         
-        .img-preview-box { width: 100%; height: 200px; background: #f1f5f9; border-radius: 12px; border: 2px dashed #cbd5e1; display: flex; align-items: center; justify-content: center; overflow: hidden; }
-        .list-item { display: flex; align-items: center; padding: 12px 0; border-bottom: 1px solid #f1f5f9; }
-        .list-thumb { width: 60px; height: 60px; border-radius: 8px; object-fit: cover; margin-right: 12px; }
+        .btn-submit { 
+            width: 100%; 
+            padding: 16px; 
+            border-radius: 15px; 
+            border: none; 
+            font-weight: 700; 
+            font-size: 1rem;
+            cursor: pointer; 
+            background: var(--primary); 
+            color: white; 
+            box-shadow: 0 10px 20px -5px rgba(15, 23, 42, 0.3);
+            transition: 0.3s;
+        }
+        .btn-submit:active { transform: translateY(2px); box-shadow: none; }
+
+        /* --- 列表優化 --- */
+        .list-item { 
+            display: flex; 
+            align-items: center; 
+            padding: 15px; 
+            background: #fff;
+            border-radius: 18px;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+            border: 1px solid rgba(0,0,0,0.01);
+        }
+        .list-thumb { 
+            width: 65px; 
+            height: 65px; 
+            border-radius: 14px; 
+            object-fit: cover; 
+            margin-right: 15px; 
+            background: #f1f5f9;
+        }
+        .list-info { flex: 1; }
+        .list-title { font-weight: 700; color: var(--primary); font-size: 1rem; margin-bottom: 4px; }
+        .list-id { font-size: 0.75rem; color: var(--text-sub); }
+        .list-price { text-align: right; }
+        .price-val { font-weight: 800; color: var(--primary); display: block; }
+        .tag { 
+            font-size: 0.65rem; 
+            padding: 4px 8px; 
+            border-radius: 8px; 
+            font-weight: 700; 
+            text-transform: uppercase;
+        }
+        .tag-stock { background: #dcfce7; color: #059669; }
+
+        .img-placeholder {
+            width: 100%;
+            height: 220px;
+            background: #f8fafc;
+            border: 2px dashed #e2e8f0;
+            border-radius: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-sub);
+            cursor: pointer;
+            margin-bottom: 20px;
+            transition: 0.3s;
+        }
+        .img-placeholder:hover { border-color: var(--accent); background: #fdfaf3; }
     </style>
 </head>
 <body>
 
 <div id="loginOverlay">
     <div class="login-card">
-        <h2>JEWELRY ERP</h2>
-        <input type="text" id="acc" class="login-input" placeholder="帳號">
-        <input type="password" id="pwd" class="login-input" placeholder="密碼">
-        <button class="btn" onclick="checkLogin()" style="background:var(--accent); color:var(--primary);">登入</button>
+        <div class="login-logo">JEWELRY</div>
+        <div style="color: rgba(255,255,255,0.5); font-size: 0.8rem; margin-bottom: 30px; letter-spacing: 2px;">CLOUD ERP SYSTEM</div>
+        <input type="text" id="acc" class="login-input" placeholder="帳號 / ACCOUNT">
+        <input type="password" id="pwd" class="login-input" placeholder="密碼 / PASSWORD">
+        <button class="btn-submit" onclick="checkLogin()" style="background: var(--accent); color: #0f172a; margin-top: 20px;">進入系統</button>
     </div>
 </div>
 
-<div class="app-header">珠寶旗艦雲端系統</div>
+<div class="app-header">JEWELRY CLOUD</div>
 
 <div id="content">
     <div id="page-dashboard" class="page active">
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
-            <div class="card" style="background:#0f172a; color:white; margin:0;">
-                <small>本月業績</small><div id="dash-sales" style="font-size:1.4rem; font-weight:800; color:var(--accent);">$0</div>
+        <div class="stat-grid">
+            <div class="stat-card sales">
+                <div class="stat-label">本月營收 / SALES</div>
+                <div id="dash-sales" class="stat-value">$0</div>
             </div>
-            <div class="card" style="margin:0; border-left:4px solid var(--success);">
-                <small>資產總值</small><div id="dash-inv" style="font-size:1.4rem; font-weight:800;">$0</div>
+            <div class="stat-card inventory">
+                <div class="stat-label">庫存資產 / ASSETS</div>
+                <div id="dash-inv" class="stat-value">$0</div>
             </div>
         </div>
-        <div class="card"><canvas id="payChart" style="max-height: 180px;"></canvas></div>
+        
+        <div class="card">
+            <div class="section-title">收支統計</div>
+            <canvas id="payChart" style="max-height: 200px;"></canvas>
+        </div>
+
         <div class="dashboard-grid">
-            <div class="dash-btn" onclick="showPage('buy')" style="background:linear-gradient(135deg, #6366f1, #4f46e5);">進貨</div>
-            <div class="dash-btn" onclick="showPage('stock')" style="background:linear-gradient(135deg, #d4af37, #b49018);">庫存</div>
+            <div class="dash-btn" onclick="showPage('buy')">
+                <div class="dash-btn-icon">📥</div>
+                <div class="dash-btn-text">商品入庫</div>
+            </div>
+            <div class="dash-btn" onclick="showPage('stock')">
+                <div class="dash-btn-icon">📦</div>
+                <div class="dash-btn-text">庫存管理</div>
+            </div>
         </div>
     </div>
 
     <div id="page-buy" class="page">
         <div class="card">
-            <div class="section-title">入庫表單</div>
+            <div class="section-title">商品入庫表單</div>
+            <label>入庫日期</label>
             <input type="date" id="buyDate">
-            <input type="text" id="buyId" placeholder="商品編號">
-            <input type="text" id="buyName" placeholder="商品名稱">
-            <input type="text" id="buySupplier" placeholder="廠商">
-            <input type="number" id="buyCost" placeholder="成本">
-            <input type="number" id="buyPrice" placeholder="定價">
-            <div class="img-preview-box" id="imgPreview" onclick="document.getElementById('cameraInput').click()">📸 拍照上傳</div>
+            <label>商品編號 ID</label>
+            <input type="text" id="buyId" placeholder="例如：J001">
+            <label>商品名稱</label>
+            <input type="text" id="buyName" placeholder="例如：18K金鑽戒">
+            <label>供應商</label>
+            <input type="text" id="buySupplier" placeholder="選擇廠商">
+            
+            <div style="display:flex; gap:15px;">
+                <div style="flex:1">
+                    <label>成本</label>
+                    <input type="number" id="buyCost" placeholder="0">
+                </div>
+                <div style="flex:1">
+                    <label>定價</label>
+                    <input type="number" id="buyPrice" placeholder="0">
+                </div>
+            </div>
+
+            <label>商品影像</label>
+            <div class="img-placeholder" id="imgPreview" onclick="document.getElementById('cameraInput').click()">
+                <span style="font-size: 2rem; margin-bottom: 10px;">📸</span>
+                <span>點擊拍攝或上傳照片</span>
+            </div>
             <input type="file" id="cameraInput" accept="image/*" style="display:none;" onchange="handleFileUpload(this)">
             <input type="hidden" id="buyImg">
-            <button class="btn" style="margin-top:15px;" onclick="doBuy()">存入資料庫</button>
+            
+            <button class="btn-submit" onclick="doBuy()">確認儲存商品</button>
         </div>
     </div>
 
     <div id="page-stock" class="page">
-        <div class="card">
-            <div class="section-title">即時清單</div>
-            <input type="text" placeholder="🔍 快速搜尋..." oninput="renderStock(this.value)">
+        <div class="card" style="background: transparent; box-shadow: none; padding: 0;">
+            <div class="section-title">在庫商品清單</div>
+            <input type="text" placeholder="🔍 搜尋商品編號、名稱..." oninput="renderStock(this.value)" style="background: white; border: none; box-shadow: var(--shadow);">
             <div id="stockList"></div>
         </div>
     </div>
 </div>
 
 <nav class="nav-bar">
-    <div class="nav-item active" onclick="showPage('dashboard', this)">首頁</div>
-    <div class="nav-item" onclick="showPage('buy', this)">進貨</div>
-    <div class="nav-item" onclick="showPage('stock', this)">庫存</div>
+    <div class="nav-item active" onclick="showPage('dashboard', this)">
+        <div class="nav-icon">🏠</div>
+        <div>首頁</div>
+    </div>
+    <div class="nav-item" onclick="showPage('buy', this)">
+        <div class="nav-icon">📥</div>
+        <div>進貨</div>
+    </div>
+    <div class="nav-item" onclick="showPage('stock', this)">
+        <div class="nav-icon">📦</div>
+        <div>庫存</div>
+    </div>
 </nav>
 
 <script>
+    // 請填入您的 GAS API 網址
     const API_URL = "https://script.google.com/macros/s/AKfycbymN7tFDVzZhi7HUanHBh9YKP07lgV1M4LrgNT7E5igPQU39KuGIIsxW-BWw4CMBPhcjA/exec"; 
     let inventory = [], currentUser = "", myChart = null;
 
+    // --- 安全登入 ---
     async function checkLogin() {
         const acc = document.getElementById('acc').value;
         const pwd = document.getElementById('pwd').value;
+        if(!acc || !pwd) return Swal.fire('請填寫', '帳號與密碼不能為空', 'info');
+        
         Swal.showLoading();
         try {
             const r = await fetch(`${API_URL}?type=login&acc=${acc}&pwd=${pwd}`);
             const res = await r.json();
             if(res.status === "success") {
                 currentUser = res.name;
-                document.getElementById('loginOverlay').style.display = 'none';
+                document.getElementById('loginOverlay').style.opacity = '0';
+                setTimeout(() => document.getElementById('loginOverlay').style.display = 'none', 300);
                 syncAll();
-            } else { Swal.fire('登入失敗', res.message, 'error'); }
-        } catch(e) { Swal.fire('錯誤', 'API 網址未設定或不正確', 'error'); }
+            } else { 
+                Swal.fire('登入失敗', '帳號或密碼錯誤', 'error'); 
+            }
+        } catch(e) { 
+            Swal.fire('連線錯誤', '請檢查 API 設定或網路', 'error'); 
+        }
     }
 
+    // --- 資料同步與初始化 ---
     async function syncAll() {
         const r = await fetch(`${API_URL}?sheet=Stock`);
         inventory = await r.json();
@@ -126,35 +409,57 @@
         document.getElementById('buyDate').value = new Date().toISOString().split('T')[0];
     }
 
+    // --- 專業級儀表板 ---
     async function loadDashboard() {
         const r = await fetch(`${API_URL}?type=dashboard`);
         const data = await r.json();
         document.getElementById('dash-sales').innerText = `$${data.monthlySales.toLocaleString()}`;
         document.getElementById('dash-inv').innerText = `$${data.inventoryValue.toLocaleString()}`;
+
         const ctx = document.getElementById('payChart').getContext('2d');
         if(myChart) myChart.destroy();
         myChart = new Chart(ctx, {
             type: 'doughnut',
-            data: { labels: Object.keys(data.paymentMethods), datasets: [{ data: Object.values(data.paymentMethods), backgroundColor: ['#d4af37', '#0f172a', '#3b82f6', '#10b981'] }] },
-            options: { cutout: '70%', plugins: { legend: { position: 'right' } } }
+            data: {
+                labels: Object.keys(data.paymentMethods),
+                datasets: [{ 
+                    data: Object.values(data.paymentMethods), 
+                    backgroundColor: ['#c5a059', '#0f172a', '#3b82f6', '#10b981', '#f43f5e'],
+                    borderWidth: 0
+                }]
+            },
+            options: { 
+                plugins: { legend: { position: 'right', labels: { usePointStyle: true, font: { size: 11 } } } },
+                cutout: '75%' 
+            }
         });
     }
 
+    // --- 庫存列表渲染 ---
     function renderStock(kw = "") {
         const container = document.getElementById('stockList');
         const filtered = inventory.filter(i => i[0].toString().includes(kw) || i[1].includes(kw));
         container.innerHTML = filtered.map(i => `
             <div class="list-item">
-                <img src="${i[6]}" class="list-thumb" onerror="this.src='https://via.placeholder.com/60?text=無圖'">
-                <div style="flex:1"><b>${i[1]}</b><br><small>${i[0]}</small></div>
-                <div style="text-align:right"><b>$${Number(i[4]).toLocaleString()}</b><br><small>${i[2]==1?'在庫':'售出'}</small></div>
+                <img src="${i[6]}" class="list-thumb" onerror="this.src='https://via.placeholder.com/65/f1f5f9/64748b?text=無影像'">
+                <div class="list-info">
+                    <div class="list-title">${i[1]}</div>
+                    <div class="list-id">編號: ${i[0]}</div>
+                </div>
+                <div class="list-price">
+                    <span class="price-val">$${Number(i[4]).toLocaleString()}</span>
+                    <span class="tag ${i[2]==1?'tag-stock':''}">
+                        ${i[2]==1?'● 在庫':'● 已售'}
+                    </span>
+                </div>
             </div>
         `).join('');
     }
 
+    // --- 圖片壓縮與處理 ---
     async function handleFileUpload(ip) {
         if (!ip.files[0]) return;
-        Swal.fire({ title: '壓縮中...', didOpen: () => Swal.showLoading() });
+        Swal.fire({ title: '奢華影像處理中...', didOpen: () => Swal.showLoading() });
         const reader = new FileReader();
         reader.onload = (e) => {
             const img = new Image();
@@ -164,11 +469,21 @@
                 if(w > 1000){ h *= 1000/w; w = 1000; }
                 canvas.width = w; canvas.height = h;
                 canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-                const b64 = canvas.toDataURL('image/jpeg', 0.7).split(',')[1];
-                const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: "uploadImage", base64Data: b64, fileName: `IMG_${Date.now()}.jpg`, mimeType: "image/jpeg" }) });
+                const b64 = canvas.toDataURL('image/jpeg', 0.8).split(',')[1];
+                
+                // 上傳至雲端
+                const res = await fetch(API_URL, { 
+                    method: 'POST', 
+                    body: JSON.stringify({ 
+                        action: "uploadImage", 
+                        base64Data: b64, 
+                        fileName: `JEWEL_${Date.now()}.jpg`, 
+                        mimeType: "image/jpeg" 
+                    }) 
+                });
                 const url = await res.text();
                 document.getElementById('buyImg').value = url;
-                document.getElementById('imgPreview').innerHTML = `<img src="${url}" style="width:100%;height:100%;object-fit:cover;">`;
+                document.getElementById('imgPreview').innerHTML = `<img src="${url}" style="width:100%; height:100%; object-fit:cover; border-radius:18px;">`;
                 Swal.close();
             };
             img.src = e.target.result;
@@ -176,21 +491,39 @@
         reader.readAsDataURL(ip.files[0]);
     }
 
+    // --- 商品入庫動作 ---
     async function doBuy() {
-        if(!document.getElementById('buyId').value) return Swal.fire('提示', '請填寫編號', 'warning');
-        Swal.showLoading();
-        const payload = { action: "buy", id: document.getElementById('buyId').value, name: document.getElementById('buyName').value, date: document.getElementById('buyDate').value, supplier: document.getElementById('buySupplier').value, cost: document.getElementById('buyCost').value, price: document.getElementById('buyPrice').value, img: document.getElementById('buyImg').value };
+        const id = document.getElementById('buyId').value;
+        if(!id) return Swal.fire('填寫提醒', '請務必輸入商品編號', 'warning');
+        
+        Swal.fire({ title: '正在存入雲端庫存...', didOpen: () => Swal.showLoading() });
+        const payload = { 
+            action: "buy", 
+            id: id, 
+            name: document.getElementById('buyName').value, 
+            date: document.getElementById('buyDate').value, 
+            supplier: document.getElementById('buySupplier').value, 
+            cost: document.getElementById('buyCost').value, 
+            price: document.getElementById('buyPrice').value, 
+            img: document.getElementById('buyImg').value 
+        };
         const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) });
         const result = await res.json();
-        if(result.status === "success") { await Swal.fire('成功', '商品已入庫', 'success'); location.reload(); }
-        else { Swal.fire('錯誤', result.message, 'error'); }
+        if(result.status === "success") { 
+            await Swal.fire({ icon: 'success', title: '完成', text: '商品已成功入庫', timer: 1500 }); 
+            location.reload(); 
+        } else { 
+            Swal.fire('失敗', result.message, 'error'); 
+        }
     }
 
+    // --- 頁面切換控制 ---
     function showPage(id, el) {
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
         document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
         document.getElementById('page-' + id).classList.add('active');
         if(el) el.classList.add('active');
+        window.scrollTo(0, 0);
     }
 </script>
 </body>
